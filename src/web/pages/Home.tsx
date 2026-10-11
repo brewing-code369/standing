@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { periodLabel, price } from '../../core/plan'
 import type { Plan } from '../../core/plan'
 import { api, ApiError } from '../lib/api'
@@ -102,6 +102,10 @@ function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => vo
 
 function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerData | null>; now: number }) {
   const health = useResource(() => api.health(), [])
+  useEffect(() => {
+    const id = setInterval(health.reload, 15000)
+    return () => clearInterval(id)
+  }, [health.reload])
   const [cheat, setCheat] = useState<{ busy: boolean; text?: string; refused?: boolean }>({ busy: false })
   const data = ledger.status === 'ready' ? ledger.data : null
   const complete = data ? data.renewals.filter((r) => r.complete).length : null
@@ -139,6 +143,11 @@ export function Home() {
   const plan = useResource(() => api.demoPlan(), [])
   const planData = plan.status === 'ready' ? plan.data : null
   const ledger = useResource(() => (planData ? loadLedger(planData, true) : Promise.resolve(null)), [planData?.id ?? null])
+  useEffect(() => {
+    if (!planData) return
+    const id = setInterval(ledger.reload, 60000)
+    return () => clearInterval(id)
+  }, [planData, ledger.reload])
   const target = plan.status === 'ready' && plan.data ? `/p/${plan.data.id}` : null
   return (
     <>
