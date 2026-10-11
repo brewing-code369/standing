@@ -191,8 +191,8 @@ export function Member({ planId, account }: { planId: string; account: string })
           foot={
             <div className="g" style={{ borderTop: '1px solid var(--color-rule)', paddingBlock: 'var(--space-3)' }}>
               <div className="span-all row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
-                <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>A creator key pulling from an account that never subscribed</span>
-                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>{tryRes?.kind === 'outsider' && tryRes.reason ? tryRes.reason : 'KeyNotFound'}</span>
+                <span className="stub"><span className="stub__elbow" aria-hidden="true" /><span className="stub__x" aria-hidden="true" />a stranger's account
+                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>{tryRes?.kind === 'outsider' && tryRes.reason ? tryRes.reason : 'KeyNotFound'}</span></span>
                 <button type="button" className="btn btn--ghost btn--xs" disabled={tryBusy !== null} onClick={() => void runTry('outsider', 'creator')}>{tryBusy === 'outsider' ? 'Asking the chain…' : 'Try it'}</button>
               </div>
               {tryRes?.kind === 'outsider' && <div className="span-all" style={{ marginTop: 'var(--space-3)' }}>{tryRes.node}</div>}
@@ -230,7 +230,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           <div className="g" style={{ rowGap: 'var(--space-6)' }}>
             <div className="c-1-6 stack">
               <h2 className="h-sec" id="cancel">Cancel</h2>
-              <p className="muted body">One signature revokes the creator, platform and STANDING keys in a single transaction. The next pull is refused with KeyAlreadyRevoked.</p>
+              <p className="muted body">One signature revokes the creator, platform and STANDING keys in a single transaction. The next pull is refused with <span className="mono" style={{ color: 'var(--color-refuse)' }}>KeyAlreadyRevoked</span>.</p>
             </div>
             <div className="c-8-12 stack">
               {mem?.state === 'cancelled' || cancel.phase === 'done' ? (

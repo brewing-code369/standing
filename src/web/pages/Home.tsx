@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { periodLabel, price } from '../../core/plan'
 import type { Plan } from '../../core/plan'
 import { api, ApiError } from '../lib/api'
@@ -111,8 +111,10 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
       const res = await api.attack(plan.id, member, 'overcut')
       const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
       setCheat({ busy: false, res, at: Date.now(), block })
+      setHeroReceipt?.(<CheatReceipt plan={plan} res={res} at={Date.now()} block={block} />)
     } catch (e) {
       setCheat({ busy: false, error: e instanceof Error ? e.message : String(e) })
+      setHeroReceipt?.(<p className="field__err" role="alert">{e instanceof Error ? e.message : String(e)}</p>)
     }
   }
   return (
@@ -128,13 +130,15 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
       <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
         <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Make the platform take double its cut</Btn>
       </div>
-      {cheat.res && <CheatReceipt plan={plan} res={cheat.res} at={cheat.at!} block={cheat.block} />}
-      {cheat.error && <p className="field__err" role="alert">{cheat.error}</p>}
     </div>
   )
 }
 
+let setHeroReceipt: ((n: React.ReactNode) => void) | null = null
+
 export function Home() {
+  const [heroReceipt, _setHeroReceipt] = useState<React.ReactNode>(null)
+  setHeroReceipt = _setHeroReceipt
   const now = useNow()
   const plan = useResource(() => api.demoPlan(), [])
   const planData = plan.status === 'ready' ? plan.data : null
@@ -150,6 +154,7 @@ export function Home() {
       <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <div className="g" style={{ alignItems: 'start', rowGap: 'var(--space-6)' }}>
           <div className="c-1-7">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : plan.status === 'error' ? null : <Skeleton label="Reading the demo plan" />}</div>
+          {heroReceipt && <div className="span-all" style={{ order: 3 }}>{heroReceipt}</div>}
           <div className="c-8-12 stack">
             <h1 className="h2">Three capped keys. One fan signature.</h1>
             <p className="body">A membership checkout where the platform takes its cut without ever holding the creator&apos;s money. Each key can pay only its own recipient, only up to its cap, once per period.</p>
