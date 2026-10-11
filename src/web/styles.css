@@ -604,5 +604,9 @@ a:hover {
 
 .receipt__foot .muted, .receipt__what { max-width: 70ch; }
 h1 { text-wrap: balance; }
-.inline-stats b { min-width: 5.5ch; display: inline-block; }
+.inline-stats b.countdown { min-width: 6.5ch; display: inline-block; }
 @media (min-width: 881px) { .rcpt__meta .chip { white-space: nowrap; } }
+
+.rcpt__lbl { display: none; }
+@media (max-width: 880px) { .rcpt__lbl { display: inline; } }
+@media (max-width: 480px) { .receipt__rows { grid-template-columns: minmax(0, 1fr); } .receipt__rows dd { text-align: left; margin-bottom: var(--space-1); } }

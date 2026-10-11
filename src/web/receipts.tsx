@@ -27,7 +27,7 @@ export function Receipts({ rows, planId, showMember = true }: { rows: Renewal[];
           <div className="rcpt" role="row" key={`${row.member}:${row.periodEnd}`}>
             <div className="g">
               <div className="c-1-3 rcpt__meta" role="cell">
-                <span className="mono">{dateTime(row.periodEnd)}</span>
+                <span className="mono"><span className="label rcpt__lbl">Period ends </span>{dateTime(row.periodEnd)}</span>
                 {showMember && (
                   <A className="mono" href={`/m/${planId}/${row.member}`}>
                     {short(row.member)}
