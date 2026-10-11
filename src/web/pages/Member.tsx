@@ -182,7 +182,7 @@ export function Member({ planId, account }: { planId: string; account: string })
             <span className="label">
               Membership on plan <A href={`/p/${p.id}`}>{p.id}</A>
             </span>
-            <h1 className="display" style={{ fontSize: 'clamp(44px, 8vw, 104px)' }}>{headWord}</h1>
+            {mem ? <h1 className="display" style={{ fontSize: 'clamp(44px, 8vw, 104px)' }}>{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
             <p className="mono" style={{ overflowWrap: 'anywhere' }}>{member}</p>
             <p className="lede">
               {p.name}. {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD every {periodLabel(p.period)}.

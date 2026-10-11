@@ -59,5 +59,6 @@ export const api = {
   createPlan: async (p: NewPlan): Promise<Plan> => planFromJson(await call('/api/plans', p)),
   run: (plan: string, member: Address) => call<{ results: PullResultJson[] }>('/api/run', { plan, member }),
   attack: (plan: string, member: Address, kind: AttackKind) => call<AttackResult>('/api/attack', { plan, member, kind }),
+  health: () => call<{ ok: boolean; lastTick: { at: number; error?: string } | null }>('/api/health'),
   runner: (plan?: string, member?: Address) => call<RunnerInfo>(`/api/runner${plan ? `?plan=${plan}${member ? `&member=${member}` : ''}` : ''}`),
 }

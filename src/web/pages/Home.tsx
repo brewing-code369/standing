@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { periodLabel, price } from '../../core/plan'
 import type { Plan } from '../../core/plan'
 import { api, ApiError } from '../lib/api'
@@ -21,8 +22,9 @@ function ProofError({ error, retry, what }: { error: Error; retry: () => void; w
   )
 }
 
-function Ledger({ plan }: { plan: Plan }) {
-  const ledger = useResource(() => loadLedger(plan, true), [plan.id])
+type LedgerData = Awaited<ReturnType<typeof loadLedger>>
+
+function Ledger({ plan, ledger }: { plan: Plan; ledger: Resource<LedgerData | null> & { reload: () => void } }) {
   return (
     <section id="ledger" className="sheet band ruled-top">
       <div className="g">
@@ -34,12 +36,12 @@ function Ledger({ plan }: { plan: Plan }) {
       <div style={{ marginTop: 'var(--space-8)' }}>
         {ledger.status === 'loading' && <div className="g"><div className="span-all"><Skeleton label="Reading TransferWithMemo logs from Tempo Moderato" /></div></div>}
         {ledger.status === 'error' && <div className="g"><div className="span-all"><ProofError error={ledger.error} retry={ledger.reload} what="The ledger" /></div></div>}
-        {ledger.status === 'ready' && ledger.data.renewals.length > 0 && (
+        {ledger.status === 'ready' && ledger.data && ledger.data.renewals.length > 0 && (
           <>
             <Receipts rows={ledger.data.renewals.slice(0, 6)} planId={plan.id} />
             <div className="g" style={{ marginTop: 'var(--space-4)' }}>
               <p className="span-all label">
-                {ledger.data.entries.length} pulls in {ledger.data.renewals.length} renewals, read through block {ledger.data.head.toLocaleString('en-US')}
+                {ledger.data.renewals.filter((r) => r.complete).length} complete renewals, three pulls each, read through block {ledger.data.head.toLocaleString('en-US')}
               </p>
             </div>
             <div className="g" style={{ marginTop: 'var(--space-12)' }}>
@@ -51,7 +53,7 @@ function Ledger({ plan }: { plan: Plan }) {
             </div>
           </>
         )}
-        {ledger.status === 'ready' && ledger.data.renewals.length === 0 && (
+        {ledger.status === 'ready' && ledger.data && ledger.data.renewals.length === 0 && (
           <div className="g">
             <div className="span-all">
               <Notice title="No renewal has settled on this plan yet." action={<LinkBtn href={`/p/${plan.id}`} arrow>Join the demo membership</LinkBtn>}>
@@ -98,19 +100,56 @@ function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => vo
   )
 }
 
+function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerData | null>; now: number }) {
+  const health = useResource(() => api.health(), [])
+  const [cheat, setCheat] = useState<{ busy: boolean; text?: string; refused?: boolean }>({ busy: false })
+  const data = ledger.status === 'ready' ? ledger.data : null
+  const complete = data ? data.renewals.filter((r) => r.complete).length : null
+  const member = data?.renewals[0]?.member
+  const tickAgo = health.status === 'ready' && health.data.lastTick ? Math.max(0, Math.round(now - health.data.lastTick.at / 1000)) : null
+  const tryCheat = async () => {
+    if (!member) return
+    setCheat({ busy: true })
+    try {
+      const r = await api.attack(plan.id, member, 'overcut')
+      setCheat({ busy: false, refused: r.status === 'refused', text: r.status === 'refused' ? `${r.reason}: ${r.attempt}` : `${r.status}: ${r.attempt}` })
+    } catch (e) {
+      setCheat({ busy: false, text: e instanceof Error ? e.message : String(e) })
+    }
+  }
+  return (
+    <div className="live" aria-live="polite">
+      <span className="label">Live on Tempo Moderato · plan {plan.id}</span>
+      <div className="live__nums">
+        <div><div className="live__n">{complete ?? '…'}</div><span className="label">complete renewals</span></div>
+        <div><div className="live__n">{complete === null ? '…' : (complete * 3).toLocaleString('en-US')}</div><span className="label">pulls settled</span></div>
+        <div><div className="live__n mono" style={{ fontSize: 'var(--text-lg)' }}>{data ? data.head.toLocaleString('en-US') : '…'}</div><span className="label">read through block</span></div>
+        <div><div className="live__n mono" style={{ fontSize: 'var(--text-lg)' }}>{tickAgo === null ? '…' : `${tickAgo}s ago`}</div><span className="label">runner last tick</span></div>
+      </div>
+      <div className="live__try">
+        <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Ask the platform key for double its cut</Btn>
+        {cheat.text && <p className="mono" style={{ fontSize: 'var(--text-sm)', color: cheat.refused ? 'var(--color-refuse)' : undefined }}>{cheat.refused ? 'Refused by the chain · ' : ''}{cheat.text}</p>}
+      </div>
+    </div>
+  )
+}
+
 export function Home() {
   const now = useNow()
   const plan = useResource(() => api.demoPlan(), [])
+  const planData = plan.status === 'ready' ? plan.data : null
+  const ledger = useResource(() => (planData ? loadLedger(planData, true) : Promise.resolve(null)), [planData?.id ?? null])
   const target = plan.status === 'ready' && plan.data ? `/p/${plan.data.id}` : null
   return (
     <>
       <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
-        <div className="g">
-          <h1 className="display c-1-10" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
+        <div className="g" style={{ alignItems: 'start', rowGap: 'var(--space-6)' }}>
+          <h1 className="display c-1-7" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
             three lines.
             <br />
             one signature<span className="period" />
           </h1>
+          <div className="c-8-12">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : <Skeleton label="Reading the demo plan" />}</div>
         </div>
         <div className="g" style={{ marginTop: 'var(--space-6)', rowGap: 'var(--space-6)' }}>
           <p className="lede c-1-6">A membership checkout where the platform takes its cut without ever holding the creator's money.</p>
@@ -160,7 +199,7 @@ export function Home() {
         </div>
       </section>
 
-      {plan.status === 'ready' && plan.data && <Ledger plan={plan.data} />}
+      {planData && <Ledger plan={planData} ledger={ledger} />}
 
       <section className="sheet band ruled-top">
         <div className="g" style={{ rowGap: 'var(--space-8)' }}>
