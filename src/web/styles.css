@@ -529,3 +529,21 @@ a:hover {
 @container (max-width: 760px) {
   .card-head .g > * + * { padding-top: var(--space-4); }
 }
+
+/* checkout: header, card and refusals ride columns 1 to 7; the panel holds columns 8 to 12 and sticks */
+.co-grid { row-gap: var(--space-12); }
+@media (min-width: 881px) {
+  .co-head { grid-row: 1; }
+  .co-card { grid-row: 2; }
+  .co-ref { grid-row: 3; }
+  .co-panel { grid-column: 8 / 13; grid-row: 1 / span 3; }
+  .co-panel > .panel { position: sticky; top: var(--space-6); }
+}
+@media (max-width: 880px) {
+  .co-grid { row-gap: var(--space-8); }
+  .co-head { order: 1; }
+  .co-panel { order: 2; }
+  .co-card { order: 3; }
+  .co-ref { order: 4; }
+  .rails { opacity: 0.5; }
+}

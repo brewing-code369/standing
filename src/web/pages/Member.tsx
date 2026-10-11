@@ -5,7 +5,7 @@ import type { Membership } from '../../core/membership'
 import { periodLabel, type Plan } from '../../core/plan'
 import { api, ApiError, type AttackKind, type AttackResult } from '../lib/api'
 import { loadLedger, loadMembership } from '../lib/chainData'
-import { countdown, dateTime, money, refusalMeaning } from '../lib/format'
+import { countdown, dateTime, money, plainError, refusalMeaning } from '../lib/format'
 import { useNow, useResource } from '../lib/router'
 import { sendCalls } from '../lib/wallet'
 import { Receipts } from '../receipts'
@@ -109,20 +109,20 @@ export function Member({ planId, account }: { planId: string; account: string })
       setMemError(null)
       return m
     } catch (e) {
-      setMemError(e instanceof Error ? e.message : String(e))
+      setMemError(plainError(e))
       return null
     }
   }, [plan, member])
   useEffect(() => {
     void readMem()
-    const id = setInterval(readMem, 6000)
+    const id = setInterval(readMem, 10000)
     return () => clearInterval(id)
   }, [readMem])
 
   const ledger = useResource(() => (plan ? loadLedger(plan).then((l) => ({ ...l, renewals: l.renewals.filter((r) => isAddressEqual(r.member, member)) })) : Promise.resolve(null)), [plan?.id, member])
   useEffect(() => {
     if (!plan) return
-    const id = setInterval(ledger.reload, 12000)
+    const id = setInterval(ledger.reload, 20000)
     return () => clearInterval(id)
   }, [plan, ledger.reload])
 
@@ -140,7 +140,7 @@ export function Member({ planId, account }: { planId: string; account: string })
       setConfirming(false)
       setCancel({ phase: 'done', tx })
     } catch (e) {
-      setCancel({ phase: 'error', message: e instanceof Error ? e.message.split('\n')[0].slice(0, 240) : String(e) })
+      setCancel({ phase: 'error', message: plainError(e) })
     }
   }
 

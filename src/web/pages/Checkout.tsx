@@ -5,7 +5,7 @@ import { periodLabel, price, ROLES, type Plan, type Role } from '../../core/plan
 import { api, ApiError, type PullResultJson } from '../lib/api'
 import { isAddressEqual } from 'viem'
 import { loadLedger, loadMembership } from '../lib/chainData'
-import { money } from '../lib/format'
+import { money, plainError } from '../lib/format'
 import { useNow, useResource } from '../lib/router'
 import { balances, fund, sendCalls } from '../lib/wallet'
 import { A, Btn, Chip, LinkBtn, Notice, Skeleton, Tx } from '../ui'
@@ -59,7 +59,7 @@ function PullRows({ results, pending }: { results: PullResultJson[]; pending: bo
   )
 }
 
-function Panel({ plan }: { plan: Plan }) {
+function Panel({ plan, onMem }: { plan: Plan; onMem: (m: Membership) => void }) {
   const { wallet, busy, error, connect, freshBrowserKey } = useWallet()
   const total = price(plan)
   const [bal, setBal] = useState<Bal | null>(null)
@@ -74,13 +74,14 @@ function Panel({ plan }: { plan: Plan }) {
     try {
       const m = await loadMembership(plan, address)
       setMem(m)
+      onMem(m)
       setMemError(null)
       return m
     } catch (e) {
-      setMemError(e instanceof Error ? e.message : String(e))
+      setMemError(plainError(e))
       return null
     }
-  }, [plan, address])
+  }, [plan, address, onMem])
 
   useEffect(() => {
     setBal(null)
@@ -111,7 +112,9 @@ function Panel({ plan }: { plan: Plan }) {
     try {
       const { results } = await api.run(plan.id, address)
       const m = await readMem()
-      setSub({ phase: 'done', tx, results: await settle(results, m) })
+      const settled = await settle(results, m)
+      await readMem()
+      setSub({ phase: 'done', tx, results: settled })
     } catch (e) {
       setSub({ phase: 'error', tx, message: e instanceof ApiError && e.offline ? 'The first pull is waiting on the renewal runner. Your keys are installed.' : e instanceof Error ? e.message : String(e) })
     }
@@ -144,7 +147,7 @@ function Panel({ plan }: { plan: Plan }) {
       await readMem()
       await pull(tx)
     } catch (e) {
-      setSub({ phase: 'error', message: e instanceof Error ? e.message.split('\n')[0].slice(0, 240) : String(e) })
+      setSub({ phase: 'error', message: plainError(e) })
     }
   }
 
@@ -296,7 +299,7 @@ export function Checkout({ planId }: { planId: string }) {
     let live = true
     const read = () => loadMembership(loaded, owner).then((m) => live && setMem(m), () => undefined)
     void read()
-    const id = setInterval(read, 8000)
+    const id = setInterval(read, 10000)
     return () => {
       live = false
       clearInterval(id)
@@ -330,27 +333,25 @@ export function Checkout({ planId }: { planId: string }) {
   }
   const plan = planR.data
   return (
-    <div className="sheet band" style={{ paddingTop: 'var(--space-12)' }}>
-      <div className="g" style={{ rowGap: 'var(--space-12)' }}>
-        <div className="c-1-7 stack-lg">
-          <div className="stack">
-            <span className="label">
-              Checkout, plan {plan.id}
-            </span>
-            <h1 className="title">{plan.name}</h1>
-            <p className="lede">
-              {plan.creatorName} on {plan.platformName}. <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}.
-            </p>
-          </div>
-          <MembershipCard plan={plan} now={now} states={mem && mem.state !== 'none' ? mem.roles : undefined} account={wallet?.address} />
-          <div className="stack">
-            <h2 className="h2">what the chain refuses.</h2>
-            <p className="muted body">Each line is enforced by the account keychain, not by this site or the runner. These are the answers it gives.</p>
-            <Refusals />
-          </div>
+    <div className="sheet band co" style={{ paddingTop: 'var(--space-12)' }}>
+      <div className="g co-grid">
+        <div className="c-1-7 co-head stack">
+          <span className="label">Checkout, plan {plan.id}</span>
+          <h1 className="title">{plan.name}</h1>
+          <p className="lede">
+            {plan.creatorName} on {plan.platformName}. <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}.
+          </p>
         </div>
-        <div className="c-8-12 sticky">
-          <Panel plan={plan} />
+        <div className="c-8-12 co-panel">
+          <Panel plan={plan} onMem={setMem} />
+        </div>
+        <div className="c-1-7 co-card">
+          <MembershipCard plan={plan} now={now} states={mem && mem.state !== 'none' ? mem.roles : undefined} account={wallet?.address} />
+        </div>
+        <div className="c-1-7 co-ref stack">
+          <h2 className="h2">what the chain refuses.</h2>
+          <p className="muted body">Each line is enforced by the account keychain, not by this site or the runner. These are the answers it gives.</p>
+          <Refusals />
         </div>
       </div>
     </div>

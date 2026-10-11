@@ -1,6 +1,7 @@
 import { createClient, http, publicActions, walletActions, type Address, type Hex } from 'viem'
 import { Account, WebAuthnP256, WebCryptoP256 } from 'viem/tempo'
-import { chain, FEE_TOKEN, PATH_USD, publicClient } from '../../core/chain'
+import { chain, FEE_TOKEN, PATH_USD } from '../../core/chain'
+import { pub } from './chainData'
 import type { Call } from '../../core/calls'
 import { toUnits } from '../../core/plan'
 
@@ -82,7 +83,6 @@ export const rememberWallet = (k: WalletKind | null) => (k ? localStorage.setIte
 const erc20 = [{ type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] }] as const
 
 export async function balances(address: Address) {
-  const pub = publicClient()
   const [pathUsd, fee] = await Promise.all([
     pub.readContract({ address: PATH_USD, abi: erc20, functionName: 'balanceOf', args: [address] }),
     pub.readContract({ address: FEE_TOKEN, abi: erc20, functionName: 'balanceOf', args: [address] }),
@@ -106,7 +106,7 @@ export async function fund(address: Address, need: bigint, onTick?: (b: { pathUs
 
 /** One signature, one Tempo transaction carrying every call. Resolves once the receipt shows success. */
 export async function sendCalls(w: Wallet, calls: Call[]) {
-  const client = createClient({ account: w.account, chain, transport: http() }).extend(publicActions).extend(walletActions)
+  const client = createClient({ account: w.account, chain, transport: http(undefined, { retryCount: 6, retryDelay: 400 }) }).extend(publicActions).extend(walletActions)
   const tx = await client.sendTransaction({ calls } as never)
   const receipt = await client.waitForTransactionReceipt({ hash: tx, timeout: 60_000 })
   if (receipt.status !== 'success') throw new Error('The transaction was included and reverted.')

@@ -34,3 +34,12 @@ export const REFUSALS: Record<string, string> = {
   Unauthorized: 'The account did not authorize this key.',
 }
 export const refusalMeaning = (name: string) => REFUSALS[name] ?? 'The chain rejected the transaction.'
+
+/** One readable line for a failed chain or network call. */
+export function plainError(e: unknown): string {
+  const m = e instanceof Error ? e.message : String(e)
+  if (m.includes('KeyAlreadyExists')) return 'This account already holds these keys. Open its membership instead.'
+  if (/rate limited|exceeds defined limit/i.test(m)) return 'The network asked for a short pause. Try again in a few seconds.'
+  if (/user rejected|NotAllowedError|cancelled|canceled/i.test(m)) return 'The signature was not given.'
+  return m.split('\n')[0].slice(0, 240)
+}
