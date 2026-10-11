@@ -113,7 +113,7 @@ function Panel({ plan }: { plan: Plan }) {
       const m = await readMem()
       setSub({ phase: 'done', tx, results: await settle(results, m) })
     } catch (e) {
-      setSub({ phase: 'error', tx, message: e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so the first pull has not run. Your keys are installed.' : e instanceof Error ? e.message : String(e) })
+      setSub({ phase: 'error', tx, message: e instanceof ApiError && e.offline ? 'The first pull is waiting on the renewal runner. Your keys are installed.' : e instanceof Error ? e.message : String(e) })
     }
   }
 
@@ -260,7 +260,7 @@ function Panel({ plan }: { plan: Plan }) {
           {sub.phase === 'error' && (
             <Notice
               tone="error"
-              title={sub.tx ? 'The keys are installed. The first pull has not run.' : 'The checkout did not go through.'}
+              title={sub.tx ? 'The keys are installed. The first pull is waiting.' : 'The checkout did not go through.'}
               action={sub.tx ? <Btn variant="ghost" size="sm" onClick={() => pull(sub.tx!)}>Run the pulls again</Btn> : <Btn variant="ghost" size="sm" onClick={doSubscribe}>Try again</Btn>}
             >
               {sub.message}

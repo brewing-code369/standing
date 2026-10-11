@@ -20,6 +20,8 @@ const ATTACKS: { kind: AttackKind; title: string; sub: string }[] = [
   { kind: 'outsider', title: 'Pull from a stranger', sub: 'Creator key on an account that never subscribed' },
 ]
 
+const HEAD: Partial<Record<Membership['state'], string>> = { active: 'active.', cancelled: 'cancelled.', none: 'ready to join.' }
+
 type Attempt = { id: number; kind: AttackKind; at: number; res?: AttackResult; error?: string }
 
 function Verdict({ a }: { a: Attempt }) {
@@ -167,7 +169,7 @@ export function Member({ planId, account }: { planId: string; account: string })
     )
 
   const p = planR.data
-  const headWord = !mem ? 'reading.' : mem.state === 'active' ? 'active.' : mem.state === 'cancelled' ? 'cancelled.' : mem.state === 'partial' ? 'half installed.' : 'not subscribed.'
+  const headWord = mem ? (HEAD[mem.state] ?? 'keys in progress.') : 'reading.'
   const periodEnd = mem && mem.state === 'active' ? mem.roles.creator.periodEnd : 0
   const paid = ledger.status === 'ready' && ledger.data ? ledger.data.renewals.flatMap((r) => Object.values(r.pulls)).reduce((s, e) => s + (e?.amount ?? 0n), 0n) : null
 

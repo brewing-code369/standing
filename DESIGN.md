@@ -2,7 +2,7 @@
 
 Hallmark catalog theme: **Grid**, signal ink **yellow**. Macrostructure: **Map / Diagram** (one wire diagram carries the page). Genre: editorial-technical.
 
-A membership card has three sealed lines. Each line names who gets paid and the cap the chain enforces. The cap is a solid yellow bar whose length is the share. The seal is an ink bar where the line meets its recipient. Anything outside the line ends in a dead-end stub that carries the chain's own revert name. The cap and the refusal are the picture.
+A membership card has three sealed lines. Each line names who gets paid and the cap the chain enforces. The cap is a solid yellow bar whose length is the share. The seal is an ink bar where the line meets its recipient. Anything outside the line ends in a dead-end spur that carries the chain's own revert name. The cap and the refusal are the picture.
 
 ## Tokens
 
@@ -55,7 +55,7 @@ A membership card has three sealed lines. Each line names who gets paid and the 
 
 ## Components
 
-- **Wire** (the card line): role label, recipient and explorer link, cap bar scaled to the share, amount at the bar end, seal mark, refusal stub.
+- **Wire** (the card line): role label, recipient and explorer link, cap bar scaled to the share, amount at the bar end, seal mark, refusal spur.
 - **Receipt row**: period, member, three pulls under the three wire columns, each a tx link.
 - **Plate**: the single yellow band carrying the primary action.
 - **Stepper**: key, funding, one signature. One active step at a time.

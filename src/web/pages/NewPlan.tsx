@@ -39,7 +39,7 @@ export function NewPlan() {
   const [made, setMade] = useState<Plan | null>(null)
   const errors = useMemo(() => check(f), [f])
 
-  const preview = useMemo(() => {
+  const shares = useMemo(() => {
     if (errors.price || errors.cut) return null
     try {
       return split(toUnits(f.price), Math.round(Number(f.cut) * 100), DEFAULT_FEE_BPS)
@@ -69,7 +69,7 @@ export function NewPlan() {
   const link = made ? `${location.origin}/p/${made.id}` : ''
 
   const cardPlan = {
-    shares: preview ?? { creator: 0n, platform: 0n, fee: 0n },
+    shares: shares ?? { creator: 0n, platform: 0n, fee: 0n },
     recipients: { creator: isAddress(f.creator) ? (f.creator as Address) : undefined, platform: isAddress(f.platform) ? (f.platform as Address) : undefined },
     period: f.period,
     creatorName: f.creatorName.trim() || 'Creator',
@@ -183,15 +183,15 @@ export function NewPlan() {
         </div>
 
         <div className="c-7-12 sticky stack">
-          <span className="label">Live split preview</span>
-          {preview ? (
+          <span className="label">Live split</span>
+          {shares ? (
             <MembershipCard plan={cardPlan} now={now} />
           ) : (
             <Notice title="The split appears here.">Enter a price and a platform cut. The creator share, your cut and the 1% STANDING fee are computed as you type, to the sixth decimal.</Notice>
           )}
-          {preview && (
+          {shares && (
             <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>
-              Creator {money(preview.creator)}, platform {money(preview.platform)}, STANDING {money(preview.fee)} pathUSD. The chain caps each key at exactly its number.
+              Creator {money(shares.creator)}, platform {money(shares.platform)}, STANDING {money(shares.fee)} pathUSD. The chain caps each key at exactly its number.
             </p>
           )}
         </div>
