@@ -20,15 +20,20 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         <span className="label">Attempt · {dateTime(at / 1000)}</span>
         <Chip kind={refused ? 'refused' : res.status === 'paid' ? 'paid' : 'wait'}>{refused ? 'Refused by chain' : res.status}</Chip>
       </header>
-      <p className="receipt__what">{(res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
-      {over && refused && res.reason === 'SpendingLimitExceeded' && <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>The renewal already pulled this period&apos;s {money(cap)}, so the key had 0.00 left; the chain refuses any further pull, and {money(asked)} is twice the whole cap.</p>}
+      <p className="receipt__what">{res.kind === 'overcut' && refused && res.reason === 'SpendingLimitExceeded' ? `Platform key pulls ${money(asked)} after its ${money(cap)} cap is spent` : (res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
       <dl className="receipt__rows">
         <dt>Signed by</dt>
         <dd>{role} key on member {short(res.member)}</dd>
         <dt>Asked</dt>
-        <dd className={over ? 'is-refuse' : ''}>{money(asked)} pathUSD</dd>
+        <dd>{money(asked)} pathUSD</dd>
         <dt>Cap per {periodLabel(plan.period)}</dt>
         <dd>{money(cap)} pathUSD</dd>
+        {refused && res.reason === 'SpendingLimitExceeded' && (
+          <>
+            <dt>Left this period</dt>
+            <dd className="is-refuse">0.00 pathUSD</dd>
+          </>
+        )}
         {blk && (
           <>
             <dt>Checked at block</dt>

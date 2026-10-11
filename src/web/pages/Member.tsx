@@ -152,7 +152,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           <div className="c-6-12 inline-stats" aria-live="off">
             <span><b>{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length.toLocaleString('en-US') : <span className="ph" />}</b> <span className="muted">renewals</span></span>
             <span><b>{paid === null ? <span className="ph" /> : money(paid)}</b> <span className="muted">pathUSD pulled, within caps</span></span>
-            <span><b>{mem?.state === 'active' ? (periodEnd - now > 0 ? `in ${countdown(periodEnd - now)}` : 'due now') : mem ? 'none' : <span className="ph" />}</b> <span className="muted">next renewal</span></span>
+            <span><b>{mem?.state === 'active' ? (periodEnd - now > 0 ? countdown(periodEnd - now) : 'due, runner next tick') : mem ? 'none' : <span className="ph" />}</b> <span className="muted">until the period ends</span></span>
           </div>
           {mem?.state === 'cancelled' && <p className="span-all muted">All three keys are revoked. The chain refuses every further pull.</p>}
           {mem?.state === 'none' && (
@@ -190,7 +190,7 @@ export function Member({ planId, account }: { planId: string; account: string })
             <div className="g" style={{ borderTop: '1px solid var(--color-rule)', paddingBlock: 'var(--space-3)' }}>
               <div className="span-all row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
                 <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>A creator key pulling from an account that never subscribed</span>
-                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>refused by the chain</span>
+                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>KeyNotFound</span>
                 <button type="button" className="btn btn--ghost btn--xs" disabled={tryBusy !== null} onClick={() => void runTry('outsider', 'creator')}>{tryBusy === 'outsider' ? 'Asking the chain…' : 'Try it'}</button>
               </div>
               {tryRes?.kind === 'outsider' && <div className="span-all" style={{ marginTop: 'var(--space-3)' }}>{tryRes.node}</div>}

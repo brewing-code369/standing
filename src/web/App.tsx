@@ -37,7 +37,7 @@ function RunnerStatus() {
   const fresh = ago < (info.tickMs / 1000) * 3 + 30
   return (
     <span>
-      <span className={`dot ${fresh ? 'dot--ok' : 'dot--down'}`} /> Renewal runner ticked {ago}s ago
+      <span className={`dot ${fresh ? 'dot--ok' : 'dot--warn'}`} /> Renewal runner {fresh ? 'ticked' : 'last ticked'} {ago}s ago
     </span>
   )
 }

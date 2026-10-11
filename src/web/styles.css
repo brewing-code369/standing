@@ -562,10 +562,6 @@ a:hover {
 .receipt__rows .is-refuse { color: var(--color-refuse); font-weight: 600; }
 .receipt__foot { display: grid; gap: var(--space-1); font-size: var(--text-sm); }
 .receipt__code { font-family: var(--font-mono); font-weight: 600; font-size: var(--text-lg); color: var(--color-refuse); overflow-wrap: anywhere; }
-.overshoot { position: relative; height: 14px; background: var(--color-paper-3); border-radius: 2px; }
-.overshoot__cap { position: absolute; inset: 0 50% 0 0; background: var(--color-accent); }
-.overshoot__ask { position: absolute; inset: 4px 0 4px 50%; background: repeating-linear-gradient(135deg, var(--color-refuse) 0 4px, transparent 4px 8px); }
-.overshoot__mark { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--color-ink); font-size: 0; }
 .receipts-log { display: grid; gap: var(--space-4); }
 
 /* r4: proof hero */
@@ -592,3 +588,5 @@ a:hover {
 
 .btn--xs { white-space: nowrap; }
 .proof-zero { white-space: nowrap; }
+
+.dot--warn { background: oklch(70% 0.15 70); }
