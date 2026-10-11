@@ -6,7 +6,7 @@ import { generatePrivateKey, privateKeyToAddress } from 'viem/accounts'
 import { chain, FEE_TOKEN, PATH_USD, publicClient } from '../src/core/chain'
 import { discoverMembers, readRole } from '../src/core/membership'
 import { planFromJson, planToJson, ROLES, split, toUnits, usd, validatePlan, type Plan, type Role } from '../src/core/plan'
-import { pull, type PullResult } from '../src/core/pull'
+import { isRateLimited, pull, type PullResult } from '../src/core/pull'
 import { readLedger, renewals } from '../src/core/ledger'
 
 const PORT = Number(process.env.PORT ?? 8787)
@@ -192,8 +192,21 @@ const statsCache = new Map<string, { at: number; body: unknown }>()
 async function stats(p: Plan) {
   const hit = statsCache.get(p.id)
   if (hit && Date.now() - hit.at < 30_000) return hit.body
-  const head = await pub.getBlockNumber()
-  const rows = renewals(await readLedger(pub, p, head))
+  let rows: ReturnType<typeof renewals> | null = null
+  let head = 0n
+  for (let attempt = 0; attempt < 4 && !rows; attempt++) {
+    try {
+      head = await pub.getBlockNumber()
+      rows = renewals(await readLedger(pub, p, head))
+    } catch (e) {
+      if (!isRateLimited(e) || attempt === 3) {
+        if (hit) return { ...(hit.body as object), stale: true }
+        throw e
+      }
+      await new Promise((r) => setTimeout(r, 2_000 * 2 ** attempt))
+    }
+  }
+  if (!rows) throw new Error('ledger read failed')
   const complete = rows.filter((r) => r.complete).length
   const body = { plan: p.id, completeRenewals: complete, pulls: complete * 3, members: new Set(rows.map((r) => r.member)).size, latestMember: rows[0]?.member ?? null, head: head.toString(), readAt: Date.now() }
   statsCache.set(p.id, { at: Date.now(), body })
