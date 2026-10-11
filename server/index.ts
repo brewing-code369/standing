@@ -7,6 +7,7 @@ import { chain, FEE_TOKEN, PATH_USD, publicClient } from '../src/core/chain'
 import { discoverMembers, readRole } from '../src/core/membership'
 import { planFromJson, planToJson, ROLES, split, toUnits, usd, validatePlan, type Plan, type Role } from '../src/core/plan'
 import { pull, type PullResult } from '../src/core/pull'
+import { readLedger, renewals } from '../src/core/ledger'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const DATA_DIR = process.env.DATA_DIR ?? './data'
@@ -187,15 +188,28 @@ async function createPlan(b: Record<string, unknown>): Promise<PlanJson> {
 
 const ATTACKER: Address = '0x000000000000000000000000000000000000dEaD'
 
+const statsCache = new Map<string, { at: number; body: unknown }>()
+async function stats(p: Plan) {
+  const hit = statsCache.get(p.id)
+  if (hit && Date.now() - hit.at < 30_000) return hit.body
+  const head = await pub.getBlockNumber()
+  const rows = renewals(await readLedger(pub, p, head))
+  const complete = rows.filter((r) => r.complete).length
+  const body = { plan: p.id, completeRenewals: complete, pulls: complete * 3, members: new Set(rows.map((r) => r.member)).size, latestMember: rows[0]?.member ?? null, head: head.toString(), readAt: Date.now() }
+  statsCache.set(p.id, { at: Date.now(), body })
+  return body
+}
+
 async function attack(p: Plan, member: Address, kind: string) {
   const keys = state.keys[p.id]
   const base = { plan: p, sponsor: SPONSOR_KEY!, periodEnd: Math.floor(Date.now() / 1000), rpcUrl: RPC_URL }
-  if (kind === 'overcut') return { kind, attempt: `platform key pulls ${usd(p.shares.platform * 2n)}, twice its cut`, ...(await pull({ ...base, role: 'platform', member, pullKey: keys.platform, amount: p.shares.platform * 2n })) }
-  if (kind === 'redirect') return { kind, attempt: `platform key sends ${usd(p.shares.platform)} to ${ATTACKER}`, ...(await pull({ ...base, role: 'platform', member, pullKey: keys.platform, to: ATTACKER })) }
-  if (kind === 'creator-redirect') return { kind, attempt: `creator key sends the creator share to the platform`, ...(await pull({ ...base, role: 'creator', member, pullKey: keys.creator, to: p.recipients.platform })) }
+  const block = (await pub.getBlockNumber()).toString()
+  if (kind === 'overcut') return { kind, block, attempt: `platform key asks ${usd(p.shares.platform * 2n)} against its ${usd(p.shares.platform)} cap per period`, ...(await pull({ ...base, role: 'platform', member, pullKey: keys.platform, amount: p.shares.platform * 2n })) }
+  if (kind === 'redirect') return { kind, block, attempt: `platform key sends ${usd(p.shares.platform)} to ${ATTACKER}`, ...(await pull({ ...base, role: 'platform', member, pullKey: keys.platform, to: ATTACKER })) }
+  if (kind === 'creator-redirect') return { kind, block, attempt: `creator key sends the creator share to the platform`, ...(await pull({ ...base, role: 'creator', member, pullKey: keys.creator, to: p.recipients.platform })) }
   if (kind === 'outsider') {
     const stranger = privateKeyToAddress(generatePrivateKey())
-    return { kind, attempt: `creator key pulls from ${stranger}, who never subscribed`, ...(await pull({ ...base, role: 'creator', member: stranger, pullKey: keys.creator })) }
+    return { kind, block, attempt: `creator key pulls from ${stranger}, who never subscribed`, ...(await pull({ ...base, role: 'creator', member: stranger, pullKey: keys.creator })) }
   }
   throw new HttpError(400, 'kind must be overcut, redirect, creator-redirect or outsider')
 }
@@ -218,6 +232,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && p === '/api/plans') return json(res, 200, Object.values(state.plans).sort((a, b) => b.createdAt - a.createdAt))
     const m = p.match(/^\/api\/plans\/([0-9a-f]{8})$/)
     if (req.method === 'GET' && m) return state.plans[m[1]] ? json(res, 200, state.plans[m[1]]) : json(res, 404, { error: 'no such plan' })
+    const sm = p.match(/^\/api\/stats\/([0-9a-f]{8})$/)
+    if (req.method === 'GET' && sm) return state.plans[sm[1]] ? json(res, 200, await stats(plan(sm[1])!)) : json(res, 404, { error: 'no such plan' })
     if (req.method === 'GET' && p === '/api/runner') {
       const [sFee, sUsd] = await Promise.all([bal(FEE_TOKEN, SPONSOR), bal(PATH_USD, SPONSOR)])
       const planId = url.searchParams.get('plan')

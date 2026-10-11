@@ -122,7 +122,7 @@ export function MembershipCard({ plan, states, now, account, head }: { plan: Car
           <div className="c-1-6">
             <div className="who-line">
               <span className="node" aria-hidden="true" />
-              <span className="label">Fan account</span>
+              <span className="label">{account ? 'Fan account' : 'Your account, after one signature'}</span>
               {account && <span className="mono">{short(account)}</span>}
             </div>
           </div>

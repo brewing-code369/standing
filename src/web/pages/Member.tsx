@@ -207,7 +207,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           <dl className="kv c-8-12" style={{ alignContent: 'start' }}>
             <dt>Pulled so far</dt>
             <dd className="mono">{paid === null ? 'reading' : `${money(paid)} pathUSD`}</dd>
-            <dt>Account pathUSD</dt>
+            <dt>Account pathUSD (Moderato faucet)</dt>
             <dd className="mono">{mem ? money(mem.balance) : 'reading'}</dd>
             <dt>Renewals settled</dt>
             <dd className="mono">{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length : 'reading'}</dd>

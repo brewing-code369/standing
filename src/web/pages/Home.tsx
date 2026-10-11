@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { periodLabel, price } from '../../core/plan'
 import type { Plan } from '../../core/plan'
 import { api, ApiError } from '../lib/api'
-import { loadLedger } from '../lib/chainData'
+import { loadLedger, pub } from '../lib/chainData'
 import { money } from '../lib/format'
 import { useNow, useResource, type Resource } from '../lib/router'
 import { Receipts } from '../receipts'
@@ -116,7 +116,9 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
     setCheat({ busy: true })
     try {
       const r = await api.attack(plan.id, member, 'overcut')
-      setCheat({ busy: false, refused: r.status === 'refused', text: r.status === 'refused' ? `${r.reason}: ${r.attempt}` : `${r.status}: ${r.attempt}` })
+      const block = await pub.getBlockNumber().catch(() => null)
+      const asked = `asked ${money(plan.shares.platform * 2n)} against the ${money(plan.shares.platform)} cap per ${periodLabel(plan.period)}`
+      setCheat({ busy: false, refused: r.status === 'refused', text: r.status === 'refused' ? `${r.reason} · ${asked}${block ? ` · Moderato block ${block.toLocaleString('en-US')}` : ''}` : `${r.status}: ${r.attempt}` })
     } catch (e) {
       setCheat({ busy: false, text: e instanceof Error ? e.message : String(e) })
     }
@@ -182,29 +184,6 @@ export function Home() {
 
       <Proof plan={plan} now={now} />
 
-      <section className="plate">
-        <div className="sheet band">
-          <div className="g" style={{ rowGap: 'var(--space-8)' }}>
-            <div className="c-1-6 stack">
-              <h2 className="h2">one signature, three pulls.</h2>
-              <p className="lede">Join the demo and watch the renewal runner pull creator, platform and fee, each hash on the explorer.</p>
-            </div>
-            <div className="c-7-12 stack-lg">
-              <div className="plate-steps">
-                <div className="plate-step">A browser key is created on this device and stays in it.</div>
-                <div className="plate-step">The Moderato faucet funds it with test money.</div>
-                <div className="plate-step">One signature installs the three capped keys.</div>
-                <div className="plate-step">The chain answers every pull, and every attempt to cheat.</div>
-              </div>
-              {target && (
-                <LinkBtn href={target} arrow>
-                  Join the demo membership
-                </LinkBtn>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {planData && <Ledger plan={planData} ledger={ledger} />}
 

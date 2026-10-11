@@ -191,7 +191,7 @@ export function NewPlan() {
           )}
           {shares && (
             <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>
-              Creator {money(shares.creator)}, platform {money(shares.platform)}, STANDING {money(shares.fee)} pathUSD. The chain caps each key at exactly its number.
+              Creator {money(shares.creator)}, platform {money(shares.platform)}, STANDING {money(shares.fee)} pathUSD. The 1% STANDING fee comes out of the platform cut, so the creator share stays exactly as priced. The chain caps each key at exactly its number.
             </p>
           )}
         </div>

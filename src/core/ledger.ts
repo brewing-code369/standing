@@ -17,7 +17,7 @@ export type LedgerEntry = {
 export async function readLedger(pub: PublicClient, plan: Plan, toBlock?: bigint): Promise<LedgerEntry[]> {
   const head = toBlock ?? (await pub.getBlockNumber())
   const out: LedgerEntry[] = []
-  for (const role of ROLES) {
+  await Promise.all(ROLES.map(async (role) => {
     for (let start = plan.createdBlock; start <= head; start += MAX_LOG_RANGE) {
       const end = start + MAX_LOG_RANGE - 1n < head ? start + MAX_LOG_RANGE - 1n : head
       const logs = await pub.getLogs({ address: PATH_USD, event: transferWithMemoEvent, args: { to: plan.recipients[role] }, fromBlock: start, toBlock: end })
@@ -27,7 +27,7 @@ export async function readLedger(pub: PublicClient, plan: Plan, toBlock?: bigint
         out.push({ plan: plan.id, member: getAddress(l.args.from), role, amount: l.args.amount ?? 0n, periodEnd: m.periodEnd, tx: l.transactionHash, block: l.blockNumber })
       }
     }
-  }
+  }))
   return out.sort((a, b) => (a.block === b.block ? ROLES.indexOf(a.role) - ROLES.indexOf(b.role) : a.block < b.block ? -1 : 1))
 }
 
