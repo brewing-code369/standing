@@ -127,7 +127,7 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
         <div><div className="live__n mono" style={{ fontSize: 'var(--text-lg)' }}>{tickAgo === null ? '…' : `${tickAgo}s ago`}</div><span className="label">runner last tick</span></div>
       </div>
       <div className="live__try">
-        <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Ask the platform key for double its cut</Btn>
+        <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Take double the cut</Btn>
         {cheat.text && <p className="mono" style={{ fontSize: 'var(--text-sm)', color: cheat.refused ? 'var(--color-refuse)' : undefined }}>{cheat.refused ? 'Refused by the chain · ' : ''}{cheat.text}</p>}
       </div>
     </div>
@@ -144,32 +144,30 @@ export function Home() {
     <>
       <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <div className="g" style={{ alignItems: 'start', rowGap: 'var(--space-6)' }}>
-          <h1 className="display c-1-7" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
-            three lines.
-            <br />
-            one signature<span className="period" />
-          </h1>
-          <div className="c-8-12">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : <Skeleton label="Reading the demo plan" />}</div>
-        </div>
-        <div className="g" style={{ marginTop: 'var(--space-6)', rowGap: 'var(--space-6)' }}>
-          <p className="lede c-1-6">A membership checkout where the platform takes its cut without ever holding the creator's money.</p>
-          <div className="c-8-12 stack">
-            {target ? (
-              <LinkBtn href={target} arrow>
-                Join the demo membership
-              </LinkBtn>
-            ) : (
-              <Btn busy={plan.status === 'loading'} disabled={plan.status !== 'loading'} arrow>
-                Join the demo membership
-              </Btn>
-            )}
-            <div>
+          <div className="c-1-7 stack">
+            <h1 className="display" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
+              three lines.
+              <br />
+              one signature<span className="period" />
+            </h1>
+            <p className="lede">A membership checkout where the platform takes its cut without ever holding the creator's money.</p>
+            <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+              {target ? (
+                <LinkBtn href={target} arrow>
+                  Join the demo membership
+                </LinkBtn>
+              ) : (
+                <Btn busy={plan.status === 'loading'} disabled={plan.status !== 'loading'} arrow>
+                  Join the demo membership
+                </Btn>
+              )}
               <A href="/new" className="btn btn--ghost">
                 Sell memberships on your platform
               </A>
             </div>
             {plan.status === 'error' && <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>The demo opens once the renewal runner answers.</p>}
           </div>
+          <div className="c-8-12">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : <Skeleton label="Reading the demo plan" />}</div>
         </div>
       </section>
 
