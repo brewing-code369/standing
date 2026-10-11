@@ -5,7 +5,7 @@ import { cancelCalls, checkoutCalls } from './calls'
 import { ACCOUNT_KEYCHAIN, PATH_USD, TRANSFER_WITH_MEMO } from './chain'
 import { decodeMemo, encodeMemo } from './memo'
 import { planFromJson, planToJson, split, toUnits, validatePlan, type Plan } from './plan'
-import { refusalName } from './pull'
+import { isRateLimited, refusalName } from './pull'
 import { renewals, type LedgerEntry } from './ledger'
 
 const a = (n: number) => `0x${n.toString(16).padStart(40, '0')}` as Address
@@ -101,6 +101,11 @@ describe('refusalName', () => {
     const e = { shortMessage: 'An internal error was received.', cause: { details: 'Revm error: keychain validation failed: AccountKeychainError(KeyAlreadyRevoked(KeyAlreadyRevoked))' } }
     expect(refusalName(e)).toBe('KeyAlreadyRevoked')
     expect(refusalName(new Error('fetch failed'))).toBeNull()
+  })
+  it('treats an RPC burst limit as retryable and a refusal as final', () => {
+    expect(isRateLimited({ shortMessage: 'HTTP request failed.', cause: { message: 'Request exceeds defined limit.\n\nURL: https://rpc.moderato.tempo.xyz' } })).toBe(true)
+    expect(isRateLimited({ status: 429 })).toBe(true)
+    expect(isRateLimited({ details: 'keychain validation failed: SpendingLimitExceeded' })).toBe(false)
   })
 })
 

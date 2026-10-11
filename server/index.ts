@@ -19,6 +19,7 @@ if (!TREASURY || !isAddress(TREASURY)) throw new Error('TREASURY is required')
 const SPONSOR = privateKeyToAddress(SPONSOR_KEY)
 const ALLOWED_PERIODS = [120, 300, 3_600, 86_400, 604_800, 2_592_000]
 const DEMO_TOPUP_BELOW = toUnits('20')
+const PULL_GAP_MS = Number(process.env.PULL_GAP_MS ?? 700)
 
 type PlanJson = ReturnType<typeof planToJson>
 type RunRecord = { at: number; plan: string; member: Address; trigger: 'tick' | 'request' | 'attack'; results: (PullResult | { role: Role; member: Address; status: 'skipped'; reason: string })[] }
@@ -80,6 +81,7 @@ async function runMember(p: Plan, member: Address): Promise<RunRecord['results']
     }
     const r = await pull({ plan: p, role, member, pullKey: keys[role], sponsor: SPONSOR_KEY!, periodEnd: st.periodEnd, rpcUrl: RPC_URL })
     out.push(r)
+    await new Promise((res) => setTimeout(res, PULL_GAP_MS))
     if (role === 'creator' && r.status !== 'paid') break
   }
   return out

@@ -28,6 +28,19 @@ export function refusalName(e: unknown): Refusal | null {
   return REFUSALS.find((r) => text.includes(r)) ?? null
 }
 
+export const RATE_LIMIT_RETRIES = 4
+
+/** The public RPC rejects bursts before broadcasting ("Request exceeds defined limit"), so a retry cannot double-pay. */
+export function isRateLimited(e: unknown): boolean {
+  let cur: unknown = e
+  for (let i = 0; cur && i < 8; i++) {
+    const x = cur as { message?: string; details?: string; status?: number; cause?: unknown }
+    if (x.status === 429 || /exceeds defined limit|rate limit|too many requests/i.test(`${x.message ?? ''} ${x.details ?? ''}`)) return true
+    cur = x.cause
+  }
+  return false
+}
+
 export type PullResult =
   | { role: Role; member: Address; status: 'paid'; tx: Hex; amount: bigint; periodEnd: number }
   | { role: Role; member: Address; status: 'refused'; reason: Refusal }
@@ -62,13 +75,19 @@ export async function pull(i: PullInput): Promise<PullResult> {
     functionName: 'transferWithMemo',
     args: [to, amount, encodeMemo({ planId: plan.id, role, periodEnd: i.periodEnd })],
   })
-  let tx: Hex
-  try {
-    tx = await client.sendTransaction({ calls: [{ to: PATH_USD, data }], feePayer: sponsor } as never)
-  } catch (e) {
-    const reason = refusalName(e)
-    if (reason) return { role, member, status: 'refused', reason }
-    return { role, member, status: 'error', message: ((e as Error).message ?? String(e)).slice(0, 300) }
+  let tx: Hex | undefined
+  for (let attempt = 0; !tx; attempt++) {
+    try {
+      tx = await client.sendTransaction({ calls: [{ to: PATH_USD, data }], feePayer: sponsor } as never)
+    } catch (e) {
+      const reason = refusalName(e)
+      if (reason) return { role, member, status: 'refused', reason }
+      if (isRateLimited(e) && attempt < RATE_LIMIT_RETRIES) {
+        await new Promise((r) => setTimeout(r, 1_500 * 2 ** attempt))
+        continue
+      }
+      return { role, member, status: 'error', message: ((e as Error).message ?? String(e)).slice(0, 300) }
+    }
   }
   const r = await client.waitForTransactionReceipt({ hash: tx, timeout: 60_000 })
   if (r.status !== 'success') return { role, member, status: 'reverted', tx }
