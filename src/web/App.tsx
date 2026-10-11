@@ -18,7 +18,7 @@ function RunnerStatus() {
     const load = () =>
       api.runner().then(
         (r) => { fails = 0; if (live) setInfo(r) },
-        () => { fails++; if (live) setInfo((prev) => (fails >= 3 || prev === null || prev === 'down' ? 'down' : prev)) },
+        () => { fails++; if (live) setInfo((prev) => (fails >= 3 ? 'down' : prev)) },
       )
     load()
     const poll = setInterval(load, 15_000)

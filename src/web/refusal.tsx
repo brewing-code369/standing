@@ -7,7 +7,7 @@ import { Chip, Tx } from './ui'
 const KEY: Record<string, 'platform' | 'creator'> = { overcut: 'platform', redirect: 'platform', 'creator-redirect': 'creator', outsider: 'creator' }
 
 /** A refused (or paid) cheat attempt, set as a receipt: who signed, what was asked, the cap, the block, and the chain's answer. */
-export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: AttackResult; at: number; block?: string | null }) {
+export function CheatReceipt({ plan, res, at, block, left }: { plan: Plan; res: AttackResult; at: number; block?: string | null; left?: bigint | null }) {
   const role = KEY[res.kind] ?? res.role
   const cap = plan.shares[role]
   const asked = res.kind === 'overcut' ? cap * 2n : cap
@@ -20,7 +20,7 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         <span className="label">Attempt · {dateTime(at / 1000)}</span>
         <Chip kind={refused ? 'refused' : res.status === 'paid' ? 'paid' : 'wait'}>{refused ? 'Refused by chain' : res.status}</Chip>
       </header>
-      <p className="receipt__what">{res.kind === 'overcut' && refused && res.reason === 'SpendingLimitExceeded' ? `Platform key pulls ${money(asked)} after its ${money(cap)} cap is spent` : (res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
+      <p className="receipt__what">{res.kind === 'overcut' ? (left != null && left === 0n ? `Platform key pulls ${money(asked)} after its ${money(cap)} cap is spent` : `Platform key asks ${money(asked)}, twice its ${money(cap)} cap`) : (res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
       <dl className="receipt__rows">
         <dt>Signed by</dt>
         <dd>{role} key on member {short(res.member)}</dd>
@@ -28,10 +28,10 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         <dd>{money(asked)} pathUSD</dd>
         <dt>Cap per {periodLabel(plan.period)}</dt>
         <dd>{money(cap)} pathUSD</dd>
-        {refused && res.reason === 'SpendingLimitExceeded' && (
+        {left != null && (
           <>
-            <dt>Left this period</dt>
-            <dd className="is-refuse">0.00 pathUSD</dd>
+            <dt>Left this period (read before the try)</dt>
+            <dd className={left < asked ? 'is-refuse' : ''}>{money(left)} pathUSD</dd>
           </>
         )}
         {blk && (

@@ -65,15 +65,17 @@ export function Member({ planId, account }: { planId: string; account: string })
   }, [plan, ledger.reload])
 
   const [tryBusy, setTryBusy] = useState<string | null>(null)
-  const [tryRes, setTryRes] = useState<{ role: Role; kind: AttackKind; node: ReactNode } | null>(null)
+  const [tryRes, setTryRes] = useState<{ role: Role; kind: AttackKind; node: ReactNode; reason?: string } | null>(null)
   const runTry = async (kind: AttackKind, role: Role, key: string = kind) => {
     if (!plan) return
     setTryBusy(key)
     const at = Date.now()
+    const rs = kind !== 'outsider' && mem && mem.state === 'active' ? mem.roles[role] : null
+    const leftBefore = rs ? (rs.remaining < plan.shares[role] ? rs.remaining : plan.shares[role]) : null
     try {
       const res = await api.attack(plan.id, member, kind)
       const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
-      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} block={block} /> })
+      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} block={block} left={leftBefore} />, reason: res.status === 'refused' ? res.reason : undefined })
     } catch (e) {
       setTryRes({ role, kind, node: <p className="field__err" role="alert">{e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so no attempt was made.' : e instanceof Error ? e.message : String(e)}</p> })
     } finally {
@@ -190,7 +192,7 @@ export function Member({ planId, account }: { planId: string; account: string })
             <div className="g" style={{ borderTop: '1px solid var(--color-rule)', paddingBlock: 'var(--space-3)' }}>
               <div className="span-all row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
                 <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>A creator key pulling from an account that never subscribed</span>
-                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>KeyNotFound</span>
+                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>{tryRes?.kind === 'outsider' && tryRes.reason ? tryRes.reason : 'KeyNotFound'}</span>
                 <button type="button" className="btn btn--ghost btn--xs" disabled={tryBusy !== null} onClick={() => void runTry('outsider', 'creator')}>{tryBusy === 'outsider' ? 'Asking the chain…' : 'Try it'}</button>
               </div>
               {tryRes?.kind === 'outsider' && <div className="span-all" style={{ marginTop: 'var(--space-3)' }}>{tryRes.node}</div>}

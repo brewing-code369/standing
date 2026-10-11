@@ -339,7 +339,7 @@ export function Checkout({ planId }: { planId: string }) {
           <span className="label">Checkout, plan <span className="mono">{plan.id}</span></span>
           <h1 className="h2">{plan.name.split(', renews')[0]}</h1>
           <p className="lede">
-            <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}. {money(plan.shares.creator)} creator, {money(plan.shares.platform)} platform, {money(plan.shares.fee)} STANDING, one signature.
+            <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}. <span className="co-split">{money(plan.shares.creator)} creator, {money(plan.shares.platform)} platform, {money(plan.shares.fee)} STANDING, one signature.</span>
           </p>
         </div>
         <div className="c-8-12 co-panel">
