@@ -7,6 +7,7 @@ import { useNow, useResource, type Resource } from '../lib/router'
 import { Receipts } from '../receipts'
 import { A, Btn, LinkBtn, Notice, Skeleton } from '../ui'
 import { MembershipCard } from '../wires'
+import { Cheat } from './Member'
 
 function runnerDown(e: Error) {
   return e instanceof ApiError && e.offline
@@ -40,6 +41,13 @@ function Ledger({ plan }: { plan: Plan }) {
               <p className="span-all label">
                 {ledger.data.entries.length} pulls in {ledger.data.renewals.length} renewals, read through block {ledger.data.head.toLocaleString('en-US')}
               </p>
+            </div>
+            <div className="g" style={{ marginTop: 'var(--space-12)' }}>
+              <div className="span-all stack">
+                <h2 className="h2">try to cheat a live member.</h2>
+                <p className="muted body">The runner holds the real platform and creator keys for this plan. Ask them to take a bigger cut, pay someone else, or pull from a stranger, and read the chain&apos;s answer.</p>
+                <Cheat plan={plan} member={ledger.data.renewals[0].member} />
+              </div>
             </div>
           </>
         )}
@@ -77,7 +85,7 @@ function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => vo
           now={now}
           head={
             <div className="stack" style={{ textAlign: 'left' }}>
-              <span className="label">Demo plan, read from the chain</span>
+              <span className="label">Demo plan · renewals read from the chain</span>
               <h2 className="h3">{plan.data.name}</h2>
               <p>
                 <span className="big-num">{money(price(plan.data))}</span> <span className="muted">pathUSD every {periodLabel(plan.data.period)}, plan {plan.data.id}</span>
@@ -96,15 +104,15 @@ export function Home() {
   const target = plan.status === 'ready' && plan.data ? `/p/${plan.data.id}` : null
   return (
     <>
-      <section className="sheet" style={{ paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-12)' }}>
+      <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <div className="g">
-          <h1 className="display c-1-10">
+          <h1 className="display c-1-10" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
             three lines.
             <br />
             one signature<span className="period" />
           </h1>
         </div>
-        <div className="g" style={{ marginTop: 'var(--space-12)', rowGap: 'var(--space-8)' }}>
+        <div className="g" style={{ marginTop: 'var(--space-6)', rowGap: 'var(--space-6)' }}>
           <p className="lede c-1-6">A membership checkout where the platform takes its cut without ever holding the creator's money.</p>
           <div className="c-8-12 stack">
             {target ? (
@@ -132,7 +140,7 @@ export function Home() {
         <div className="sheet band">
           <div className="g" style={{ rowGap: 'var(--space-8)' }}>
             <div className="c-1-6 stack">
-              <h2 className="h2">sixty seconds, three pulls.</h2>
+              <h2 className="h2">one signature, three pulls.</h2>
               <p className="lede">Join the demo and watch the renewal runner pull creator, platform and fee, each hash on the explorer.</p>
             </div>
             <div className="c-7-12 stack-lg">

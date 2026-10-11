@@ -54,7 +54,7 @@ function Verdict({ a }: { a: Attempt }) {
   )
 }
 
-function Cheat({ plan, member }: { plan: Plan; member: Address }) {
+export function Cheat({ plan, member }: { plan: Plan; member: Address }) {
   const [log, setLog] = useState<Attempt[]>([])
   const [busy, setBusy] = useState<AttackKind | null>(null)
   const go = async (kind: AttackKind) => {
@@ -281,7 +281,9 @@ export function Member({ planId, account }: { planId: string; account: string })
                     </div>
                   )}
                 </div>
-              ) : !mem || mem.state === 'none' ? (
+              ) : !mem ? (
+                <p className="muted">{memError ?? 'Reading the three keys on this account from Moderato.'}</p>
+              ) : mem.state === 'none' ? (
                 <p className="muted">There is nothing to cancel on this account.</p>
               ) : mine ? (
                 confirming ? (

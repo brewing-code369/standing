@@ -125,9 +125,6 @@ export function MembershipCard({ plan, states, now, account, head }: { plan: Car
               <span className="label">Fan account</span>
               {account && <span className="mono">{short(account)}</span>}
             </div>
-            <p className="muted" style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
-              One signature installs the three keys. The money stays here until each key pulls its own share.
-            </p>
           </div>
           {head && <div className="c-7-12">{head}</div>}
         </div>

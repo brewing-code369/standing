@@ -8,8 +8,8 @@ import type { Plan } from '../../core/plan'
 /** Blocks of history the landing proof reads: the latest renewals, not the plan's whole life. */
 export const LEDGER_WINDOW = 400_000n
 
-/** Browser reads batch JSON-RPC calls and retry the RPC's burst limit with backoff. */
-export const pub = createPublicClient({ chain, transport: http(undefined, { batch: { wait: 25 }, retryCount: 6, retryDelay: 400 }) }) as unknown as PublicClient
+/** Moderato rejects batched JSON-RPC, so browser reads go one call per request and retry the burst limit with backoff. */
+export const pub = createPublicClient({ chain, transport: http(undefined, { retryCount: 4, retryDelay: 400 }) }) as unknown as PublicClient
 
 export async function loadLedger(plan: Plan, windowed = false): Promise<{ entries: LedgerEntry[]; renewals: Renewal[]; head: bigint }> {
   const head = await pub.getBlockNumber()

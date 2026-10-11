@@ -339,7 +339,7 @@ export function Checkout({ planId }: { planId: string }) {
           <span className="label">Checkout, plan {plan.id}</span>
           <h1 className="title">{plan.name}</h1>
           <p className="lede">
-            {plan.creatorName} on {plan.platformName}. <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}.
+            Creator {plan.creatorName} · platform {plan.platformName} · <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}.
           </p>
         </div>
         <div className="c-8-12 co-panel">

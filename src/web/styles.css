@@ -334,14 +334,14 @@ a:hover {
 
 /* ---------- the wire (the card line) ---------- */
 .card { border-top: 2px solid var(--color-ink); border-bottom: 1px solid var(--color-ink); background: var(--color-paper); position: relative; container-type: inline-size; }
-.card-head { border-bottom: 1px solid var(--color-rule); padding-block: var(--space-6); }
+.card-head { border-bottom: 1px solid var(--color-rule); padding-block: var(--space-4); }
 .node { display: inline-block; width: 14px; height: 14px; background: var(--color-ink); flex: none; }
 .node--ring { background: var(--color-paper); border: 2px solid var(--color-ink); }
 .who-line { display: flex; align-items: center; gap: var(--space-3); }
 
-.wire { padding-block: var(--space-6); border-top: 1px solid var(--color-rule); position: relative; }
+.wire { padding-block: var(--space-4); border-top: 1px solid var(--color-rule); position: relative; }
 .wire:first-of-type { border-top: 0; }
-.wire .g { align-items: center; row-gap: var(--space-4); }
+.wire .g { align-items: center; row-gap: var(--space-2); }
 .wire__role { display: flex; flex-direction: column; gap: var(--space-1); }
 .wire__name { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .track {
