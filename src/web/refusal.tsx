@@ -7,7 +7,7 @@ import { Chip, Tx } from './ui'
 const KEY: Record<string, 'platform' | 'creator'> = { overcut: 'platform', redirect: 'platform', 'creator-redirect': 'creator', outsider: 'creator' }
 
 /** A refused (or paid) cheat attempt, set as a receipt: who signed, what was asked, the cap, the block, and the chain's answer. */
-export function CheatReceipt({ plan, res, at, block, left }: { plan: Plan; res: AttackResult; at: number; block?: string | null; left?: bigint | null }) {
+export function CheatReceipt({ plan, res, at, block}: { plan: Plan; res: AttackResult; at: number; block?: string | null }) {
   const role = KEY[res.kind] ?? res.role
   const cap = plan.shares[role]
   const asked = res.kind === 'overcut' ? cap * 2n : cap

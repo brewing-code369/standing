@@ -93,13 +93,13 @@ function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => vo
   )
 }
 
-function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerData | null>; now: number }) {
+function LiveProof({ plan, ledger, now, onResult }: { plan: Plan; ledger: Resource<LedgerData | null>; now: number; onResult: (n: React.ReactNode) => void }) {
   const health = useResource(() => api.health(), [])
   useEffect(() => {
     const id = setInterval(health.reload, 15000)
     return () => clearInterval(id)
   }, [health.reload])
-  const [cheat, setCheat] = useState<{ busy: boolean; res?: AttackResult; at?: number; block?: string | null; error?: string }>({ busy: false })
+  const [cheat, setCheat] = useState<{ busy: boolean }>({ busy: false })
   const data = ledger.status === 'ready' ? ledger.data : null
   const complete = data ? data.renewals.filter((r) => r.complete).length : null
   const member = data?.renewals[0]?.member
@@ -110,11 +110,12 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
     try {
       const res = await api.attack(plan.id, member, 'overcut')
       const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
-      setCheat({ busy: false, res, at: Date.now(), block })
-      setHeroReceipt?.(<CheatReceipt plan={plan} res={res} at={Date.now()} block={block} />)
+      const at = Date.now()
+      setCheat({ busy: false })
+      onResult(<CheatReceipt plan={plan} res={res} at={at} block={block} />)
     } catch (e) {
-      setCheat({ busy: false, error: e instanceof Error ? e.message : String(e) })
-      setHeroReceipt?.(<p className="field__err" role="alert">{e instanceof Error ? e.message : String(e)}</p>)
+      setCheat({ busy: false })
+      onResult(<p className="field__err" role="alert">{e instanceof Error ? e.message : String(e)}</p>)
     }
   }
   return (
@@ -134,11 +135,8 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
   )
 }
 
-let setHeroReceipt: ((n: React.ReactNode) => void) | null = null
-
 export function Home() {
-  const [heroReceipt, _setHeroReceipt] = useState<React.ReactNode>(null)
-  setHeroReceipt = _setHeroReceipt
+  const [heroReceipt, setHeroReceipt] = useState<React.ReactNode>(null)
   const now = useNow()
   const plan = useResource(() => api.demoPlan(), [])
   const planData = plan.status === 'ready' ? plan.data : null
@@ -153,7 +151,7 @@ export function Home() {
     <>
       <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <div className="g" style={{ alignItems: 'start', rowGap: 'var(--space-6)' }}>
-          <div className="c-1-7">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : plan.status === 'error' ? null : <Skeleton label="Reading the demo plan" />}</div>
+          <div className="c-1-7">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} onResult={setHeroReceipt} /> : plan.status === 'error' ? null : <Skeleton label="Reading the demo plan" />}</div>
           {heroReceipt && <div className="span-all" style={{ order: 3 }}>{heroReceipt}</div>}
           <div className="c-8-12 stack">
             <h1 className="h2">Three capped keys. One fan signature.</h1>

@@ -70,12 +70,10 @@ export function Member({ planId, account }: { planId: string; account: string })
     if (!plan) return
     setTryBusy(key)
     const at = Date.now()
-    const rs = kind !== 'outsider' && mem && mem.state === 'active' ? mem.roles[role] : null
-    const leftBefore = rs ? (rs.remaining < plan.shares[role] ? rs.remaining : plan.shares[role]) : null
     try {
       const res = await api.attack(plan.id, member, kind)
       const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
-      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} block={block} left={leftBefore} />, reason: res.status === 'refused' ? res.reason : undefined })
+      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} block={block} />, reason: res.status === 'refused' ? res.reason : undefined })
     } catch (e) {
       setTryRes({ role, kind, node: <p className="field__err" role="alert">{e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so no attempt was made.' : e instanceof Error ? e.message : String(e)}</p> })
     } finally {

@@ -25,7 +25,7 @@ export const dateTime = (unix: number) =>
   new Date(unix * 1000).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 
 export const REFUSALS: Record<string, string> = {
-  SpendingLimitExceeded: 'This key already pulled its cap for the period. The account holds the rest.',
+  SpendingLimitExceeded: 'The request is more than this key may still pull this period. The account holds the rest.',
   CallNotAllowed: 'This key may call one function, to one address. Anything else is rejected before it executes.',
   KeyAlreadyRevoked: 'The member cancelled. The key no longer exists on their account.',
   KeyNotFound: 'This account never installed that key.',
