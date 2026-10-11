@@ -9,7 +9,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "e2e": "tsx scripts/e2e.ts",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "api": "tsx server/index.ts",
+    "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "react": "19.2.0",

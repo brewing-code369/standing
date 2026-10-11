@@ -6,3 +6,5 @@ keys/
 *.local.json
 .progress/LEDGER.md
 .DS_Store
+data/
+data-local/

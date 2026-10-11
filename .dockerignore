@@ -1,0 +1,10 @@
+node_modules
+keys
+data
+data-local
+evidence
+dist
+.git
+.progress
+src/web
+*.md
