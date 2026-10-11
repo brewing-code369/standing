@@ -2,6 +2,7 @@
 
 **A platform takes its cut of a creator's membership income on Tempo without ever holding the creator's money. One fan signature installs three access keys on the fan's own account: one pays only the creator, one pays only the platform, one pays only the STANDING fee, each capped per period by the chain.**
 
+- Site: https://preview.standing-tempo.pages.dev (live proof, checkout, member pages, one-click cheat answered by the chain)
 - API and renewal runner: https://standing-tempo.fly.dev/api/health
 - Network: Tempo Moderato (chain 42431), pathUSD
 - Live plans: `GET https://standing-tempo.fly.dev/api/plans`
