@@ -336,10 +336,10 @@ export function Checkout({ planId }: { planId: string }) {
     <div className="sheet band co" style={{ paddingTop: 'var(--space-12)' }}>
       <div className="g co-grid">
         <div className="c-1-7 co-head stack">
-          <span className="label">Checkout, plan {plan.id}</span>
-          <h1 className="h2">{plan.name}</h1>
+          <span className="label">Checkout, plan <span className="mono">{plan.id}</span></span>
+          <h1 className="h2">{plan.name.split(', renews')[0]}</h1>
           <p className="lede">
-            <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD per renewal. Three keys, one signature: {money(plan.shares.creator)} to {plan.creatorName}, {money(plan.shares.platform)} to {plan.platformName}, {money(plan.shares.fee)} to STANDING.
+            <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}. {money(plan.shares.creator)} creator, {money(plan.shares.platform)} platform, {money(plan.shares.fee)} STANDING, one signature.
           </p>
         </div>
         <div className="c-8-12 co-panel">

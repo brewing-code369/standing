@@ -48,7 +48,7 @@ export function Receipts({ rows, planId, showMember = true }: { rows: Renewal[];
                         <Tx hash={e.tx} />
                       </div>
                     ) : (
-                      <span className="mono">not pulled</span>
+                      <span className="mono">pending</span>
                     )}
                   </div>
                 )

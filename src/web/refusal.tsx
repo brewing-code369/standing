@@ -20,8 +20,8 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         <span className="label">Attempt · {dateTime(at / 1000)}</span>
         <Chip kind={refused ? 'refused' : res.status === 'paid' ? 'paid' : 'wait'}>{refused ? 'Refused by chain' : res.status}</Chip>
       </header>
-      <p className="receipt__what">{res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)}</p>
-      {over && (
+      <p className="receipt__what">{(res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
+      {false && over && (
         <div className="overshoot" role="img" aria-label={`asked ${money(asked)}, cap ${money(cap)}`}>
           <div className="overshoot__cap" />
           <div className="overshoot__ask" />

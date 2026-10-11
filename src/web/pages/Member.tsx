@@ -4,7 +4,7 @@ import { cancelCalls } from '../../core/calls'
 import type { Membership } from '../../core/membership'
 import { periodLabel, type Plan, type Role } from '../../core/plan'
 import { api, ApiError, type AttackKind, type AttackResult } from '../lib/api'
-import { loadLedger, loadMembership } from '../lib/chainData'
+import { loadLedger, loadMembership, pub } from '../lib/chainData'
 import { countdown, dateTime, money, plainError, short } from '../lib/format'
 import { useNow, useResource } from '../lib/router'
 import { sendCalls } from '../lib/wallet'
@@ -13,13 +13,6 @@ import { A, Btn, Chip, LinkBtn, Notice, Skeleton, Tx } from '../ui'
 import { useWallet } from '../wallet-context'
 import { MembershipCard, type TryLine } from '../wires'
 import { CheatReceipt } from '../refusal'
-
-const ATTACKS: { kind: AttackKind; title: string; sub: string }[] = [
-  { kind: 'overcut', title: 'Take more than the cut', sub: 'Platform key asks for double its cap' },
-  { kind: 'redirect', title: 'Send the cut elsewhere', sub: 'Platform key pays another address' },
-  { kind: 'creator-redirect', title: 'Divert the creator share', sub: 'Creator key pays the platform' },
-  { kind: 'outsider', title: 'Pull from a stranger', sub: 'Creator key on an account that never subscribed' },
-]
 
 const HEAD: Partial<Record<Membership['state'], string>> = { active: 'Active', cancelled: 'Cancelled', none: 'Ready to join' }
 
@@ -35,44 +28,6 @@ function Verdict({ a, plan }: { a: Attempt; plan: Plan }) {
     )
   }
   return <CheatReceipt plan={plan} res={a.res!} at={a.at} />
-}
-
-export function Cheat({ plan, member }: { plan: Plan; member: Address }) {
-  const [log, setLog] = useState<Attempt[]>([])
-  const [busy, setBusy] = useState<AttackKind | null>(null)
-  const go = async (kind: AttackKind) => {
-    setBusy(kind)
-    const id = Date.now()
-    try {
-      const res = await api.attack(plan.id, member, kind)
-      setLog((l) => [{ id, kind, at: id, res }, ...l])
-    } catch (e) {
-      setLog((l) => [{ id, kind, at: id, error: e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so no attempt was made.' : e instanceof Error ? e.message : String(e) }, ...l])
-    } finally {
-      setBusy(null)
-    }
-  }
-  return (
-    <div className="stack-lg">
-      <div className="cheat">
-        {ATTACKS.map((a) => (
-          <Btn key={a.kind} variant="ghost" className="cheat__btn" busy={busy === a.kind} disabled={busy !== null && busy !== a.kind} onClick={() => go(a.kind)}>
-            {a.title}
-            <small>{a.sub}</small>
-          </Btn>
-        ))}
-      </div>
-      {log.length === 0 ? (
-        <p className="muted body">Press one. The runner signs the attempt with its real key, sends it to Tempo Moderato and reports the revert name the chain returns.</p>
-      ) : (
-        <div className="receipts-log">
-          {log.map((a) => (
-            <Verdict key={a.id} a={a} plan={plan} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function Member({ planId, account }: { planId: string; account: string }) {
@@ -117,7 +72,8 @@ export function Member({ planId, account }: { planId: string; account: string })
     const at = Date.now()
     try {
       const res = await api.attack(plan.id, member, kind)
-      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} /> })
+      const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
+      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} block={block} /> })
     } catch (e) {
       setTryRes({ role, kind, node: <p className="field__err" role="alert">{e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so no attempt was made.' : e instanceof Error ? e.message : String(e)}</p> })
     } finally {
@@ -180,7 +136,7 @@ export function Member({ planId, account }: { planId: string; account: string })
 
   return (
     <>
-      <div className="sheet band" style={{ paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-16)' }}>
+      <div className="sheet band" style={{ paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-8)' }}>
       <div className="stack-lg">
         <div className="g" style={{ rowGap: 'var(--space-6)', alignItems: 'end' }}>
           <div className="c-1-5 stack">
@@ -188,6 +144,7 @@ export function Member({ planId, account }: { planId: string; account: string })
               Membership on plan <A href={`/p/${p.id}`}>{p.id}</A> · <span className="mono">{short(member)}</span>
             </span>
             {mem ? <h1 className="title">{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
+ {memError && mem && <p className="muted" style={{ fontSize: 'var(--text-xs)' }}>Last key read failed, showing the previous read; retrying every 10 s.</p>}
             <p className="muted">
               {p.name} · {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD per renewal
             </p>
@@ -207,7 +164,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           )}
         </div>
 
-        {memError && (
+        {memError && !mem && (
           <div className="g">
             <div className="span-all">
               <Notice tone="error" title="The keychain read failed." action={<Btn variant="ghost" onClick={() => void readMem()}>Read again</Btn>}>
@@ -220,7 +177,7 @@ export function Member({ planId, account }: { planId: string; account: string })
         <div className="g">
           <div className="span-all row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <h2 className="h-sec">Three keys on this account</h2>
-            <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>Press <b>Try it</b> on any refusal: the runner signs that cheat with its real key and the chain answers.</span>
+            <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>Three refusals on this card can be tried live. <b>Try it</b> has the runner sign that cheat with its real key; the chain answers.</span>
           </div>
         </div>
         <MembershipCard
@@ -266,7 +223,7 @@ export function Member({ planId, account }: { planId: string; account: string })
       </div>
 
 
-      <div className="sheet band">
+      <div className="sheet band--tight" style={{ borderTop: '1px solid var(--color-rule)' }}>
         <section className="stack" aria-labelledby="cancel">
           <div className="g" style={{ rowGap: 'var(--space-6)' }}>
             <div className="c-1-6 stack">

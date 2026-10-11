@@ -118,7 +118,7 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
   }
   return (
     <div className="stack">
-      <span className="label">Live on Tempo Moderato · plan {plan.id} · runner ticked {tickAgo === null ? '…' : `${tickAgo}s ago`}</span>
+      <span className="label">Live on Tempo Moderato · plan <span className="mono">{plan.id}</span> · runner ticked {tickAgo === null ? '…' : `${tickAgo}s ago`}</span>
       <div className="proof-row">
         <span className="proof-num">{complete === null ? <span className="ph" aria-label="reading" /> : complete.toLocaleString('en-US')}</span>
         <span className="h3">complete renewals{complete !== null && <>, <span className="proof-zero">each pull inside its cap</span></>}</span>
