@@ -21,7 +21,7 @@ const ATTACKS: { kind: AttackKind; title: string; sub: string }[] = [
   { kind: 'outsider', title: 'Pull from a stranger', sub: 'Creator key on an account that never subscribed' },
 ]
 
-const HEAD: Partial<Record<Membership['state'], string>> = { active: 'active.', cancelled: 'cancelled.', none: 'ready to join.' }
+const HEAD: Partial<Record<Membership['state'], string>> = { active: 'Active', cancelled: 'Cancelled', none: 'Ready to join' }
 
 type Attempt = { id: number; kind: AttackKind; at: number; res?: AttackResult; error?: string }
 
@@ -142,7 +142,7 @@ export function Member({ planId, account }: { planId: string; account: string })
       <div className="sheet band">
         <div className="g">
           <div className="c-1-7 stack">
-            <h1 className="title">no such plan.</h1>
+            <h1 className="title">No such plan</h1>
             <Notice tone="error" title={planR.error instanceof ApiError && planR.error.offline ? 'The renewal runner is not answering.' : `Plan ${planId} is not published.`} action={<Btn variant="ghost" onClick={planR.reload}>Try again</Btn>}>
               The membership page reads the plan from the renewal runner and the keys from the chain.
             </Notice>
@@ -152,7 +152,7 @@ export function Member({ planId, account }: { planId: string; account: string })
     )
 
   const p = planR.data
-  const headWord = mem ? (HEAD[mem.state] ?? 'keys in progress.') : 'reading.'
+  const headWord = mem ? (HEAD[mem.state] ?? 'Keys in progress') : 'Reading'
   const periodEnd = mem && mem.state === 'active' ? mem.roles.creator.periodEnd : 0
   const paid = ledger.status === 'ready' && ledger.data ? ledger.data.renewals.flatMap((r) => Object.values(r.pulls)).reduce((s, e) => s + (e?.amount ?? 0n), 0n) : null
 
@@ -167,26 +167,13 @@ export function Member({ planId, account }: { planId: string; account: string })
             </span>
             {mem ? <h1 className="title">{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
             <p className="muted">
-              {p.name}. {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD every {periodLabel(p.period)}.
+              {p.name} · {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD per renewal
             </p>
           </div>
-          <div className="c-6-12 member-stats">
-            <div>
-              <span className="label">Renewals settled</span>
-              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }}>{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length.toLocaleString('en-US') : '…'}</p>
-            </div>
-            <div>
-              <span className="label">Pulled so far</span>
-              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }}>{paid === null ? '…' : money(paid)}</p>
-              <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>pathUSD, within caps</span>
-            </div>
-            <div>
-              <span className="label">Next renewal</span>
-              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }} aria-live="off">
-                {mem?.state === 'active' ? (periodEnd - now > 0 ? `in ${countdown(periodEnd - now)}` : 'due now') : mem ? 'none' : '…'}
-              </p>
-              {mem?.state === 'active' && <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>at {dateTime(periodEnd)}</span>}
-            </div>
+          <div className="c-6-12 inline-stats" aria-live="off">
+            <span><b>{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length.toLocaleString('en-US') : <span className="ph" />}</b> <span className="muted">renewals</span></span>
+            <span><b>{paid === null ? <span className="ph" /> : money(paid)}</b> <span className="muted">pathUSD pulled, within caps</span></span>
+            <span><b>{mem?.state === 'active' ? (periodEnd - now > 0 ? `in ${countdown(periodEnd - now)}` : 'due now') : mem ? 'none' : <span className="ph" />}</b> <span className="muted">next renewal</span></span>
           </div>
           {mem?.state === 'cancelled' && <p className="span-all muted">All three keys are revoked. The chain refuses every further pull.</p>}
           {mem?.state === 'none' && (
@@ -210,6 +197,16 @@ export function Member({ planId, account }: { planId: string; account: string })
 
         <MembershipCard plan={p} now={now} account={member} states={mem && mem.state !== 'none' ? mem.roles : undefined} />
 
+        <section className="g" aria-labelledby="cheat" style={{ rowGap: 'var(--space-6)' }}>
+          <div className="c-1-5 stack">
+            <h2 className="h3" id="cheat">Try to cheat this member</h2>
+            <p className="muted">The runner holds only these three keys. Ask it to break its own rules; each attempt is signed with the real key and sent to Moderato, and the chain&apos;s answer comes back as a receipt.</p>
+          </div>
+          <div className="c-6-12">
+            <Cheat plan={p} member={member} />
+          </div>
+        </section>
+
         <section className="stack" aria-labelledby="hist">
           <div className="g">
             <div className="c-1-7 stack">
@@ -218,7 +215,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           </div>
           {ledger.status === 'loading' && <div className="g"><div className="span-all"><Skeleton label="Reading this member's pulls from the chain logs" /></div></div>}
           {ledger.status === 'error' && <div className="g"><div className="span-all"><Notice tone="error" title="The ledger did not load." action={<Btn variant="ghost" onClick={ledger.reload}>Try again</Btn>}>{ledger.error.message}</Notice></div></div>}
-          {ledger.status === 'ready' && ledger.data && ledger.data.renewals.length > 0 && <Receipts rows={ledger.data.renewals} planId={p.id} showMember={false} />}
+          {ledger.status === 'ready' && ledger.data && ledger.data.renewals.length > 0 && <><Receipts rows={ledger.data.renewals.slice(0, 6)} planId={p.id} showMember={false} />{ledger.data.renewals.length > 6 && <p className="label" style={{ paddingInline: 'var(--pad)' }}>Latest 6 of {ledger.data.renewals.length} renewals for this member · every hash opens in the explorer</p>}</>}
           {ledger.status === 'ready' && ledger.data && ledger.data.renewals.length === 0 && (
             <div className="g">
               <div className="span-all">
@@ -233,19 +230,6 @@ export function Member({ planId, account }: { planId: string; account: string })
       </div>
       </div>
 
-      <section className="plate" aria-labelledby="cheat">
-          <div className="sheet band">
-            <div className="g" style={{ rowGap: 'var(--space-8)' }}>
-              <div className="c-1-6 stack">
-                <h2 className="h2" id="cheat">Try to cheat this member</h2>
-                <p className="lede">The runner holds only these three keys. Ask it to break its own rules.</p>
-              </div>
-              <div className="c-7-12" style={{ background: 'var(--color-paper)', border: '1px solid var(--color-ink)', padding: 'var(--space-6)' }}>
-                <Cheat plan={p} member={member} />
-              </div>
-            </div>
-          </div>
-      </section>
 
       <div className="sheet band">
         <section className="stack" aria-labelledby="cancel">

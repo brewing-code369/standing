@@ -82,7 +82,7 @@ export function NewPlan() {
         <div className="g" style={{ rowGap: 'var(--space-8)' }}>
           <div className="c-1-10 stack">
             <span className="label">Plan {made.id} is live</span>
-            <h1 className="display" style={{ fontSize: 'clamp(44px, 8vw, 104px)' }}>share the link.</h1>
+            <h1 className="display" style={{ fontSize: 'clamp(44px, 8vw, 104px)' }}>Share the link</h1>
           </div>
           <div className="c-1-7 stack">
             <p className="lede">Members who open it sign once. Their money stays in their account until each key pulls its own share.</p>
@@ -111,7 +111,7 @@ export function NewPlan() {
         <div className="c-1-6 stack-lg">
           <div className="stack">
             <span className="label">For platform operators</span>
-            <h1 className="title">sell memberships.</h1>
+            <h1 className="title">Sell memberships</h1>
             <p className="lede">Set the price and your cut. The checkout link that comes back moves each share straight from the member to its owner.</p>
           </div>
           <form onSubmit={submit} noValidate className="stack-lg" aria-label="Create a plan">

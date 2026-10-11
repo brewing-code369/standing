@@ -322,7 +322,7 @@ export function Checkout({ planId }: { planId: string }) {
       <div className="sheet band">
         <div className="g">
           <div className="c-1-7 stack">
-            <h1 className="title">{missing ? 'no such plan.' : 'runner offline.'}</h1>
+            <h1 className="title">{missing ? 'No such plan' : 'Runner offline'}</h1>
             <Notice tone="error" title={missing ? `Plan ${planId} is not published.` : 'The renewal runner is not answering.'} action={<><Btn variant="ghost" onClick={planR.reload}>Try again</Btn><A href="/" className="btn btn--ghost">Back to the card</A></>}>
               {missing ? 'Check the link with the platform that sent it, or create the plan yourself.' : 'The plan is held by the runner. Try again in a moment.'}
             </Notice>
@@ -337,9 +337,9 @@ export function Checkout({ planId }: { planId: string }) {
       <div className="g co-grid">
         <div className="c-1-7 co-head stack">
           <span className="label">Checkout, plan {plan.id}</span>
-          <h1 className="title">{plan.name}</h1>
+          <h1 className="h2">{plan.name}</h1>
           <p className="lede">
-            Splits between {plan.creatorName}, {plan.platformName} and STANDING · <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD every {periodLabel(plan.period)}.
+            Splits between {plan.creatorName}, {plan.platformName} and STANDING · <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD per renewal.
           </p>
         </div>
         <div className="c-8-12 co-panel">
@@ -349,7 +349,7 @@ export function Checkout({ planId }: { planId: string }) {
           <MembershipCard plan={plan} now={now} states={mem && mem.state !== 'none' ? mem.roles : undefined} account={wallet?.address} />
         </div>
         <div className="c-1-7 co-ref stack">
-          <h2 className="h2">what the chain refuses.</h2>
+          <h2 className="h2">What the chain refuses</h2>
           <p className="muted body">Each line is enforced by the account keychain, not by this site or the runner. These are the answers it gives.</p>
           <Refusals />
         </div>

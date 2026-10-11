@@ -116,7 +116,7 @@ function Page() {
           <div className="sheet band">
             <div className="g">
               <div className="c-1-7 stack">
-                <h1 className="title">no line here.</h1>
+                <h1 className="title">Nothing here</h1>
                 <Notice title={`Nothing lives at ${route.path}`} action={<A className="btn" href="/">Back to the card</A>}>
                   Checkout links look like /p/ followed by an 8 character plan id. Membership pages look like /m/ plan id / account.
                 </Notice>
