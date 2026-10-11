@@ -338,8 +338,8 @@ a:hover {
 .chip--ok { color: var(--color-ok); border-color: var(--color-ok); }
 
 /* ---------- the wire (the card line) ---------- */
-.card { border-top: 2px solid var(--color-ink); border-bottom: 1px solid var(--color-ink); background: var(--color-paper); position: relative; container-type: inline-size; }
-.card-head { border-bottom: 1px solid var(--color-rule); padding-block: var(--space-4); }
+.card { border-top: 2px solid var(--color-ink); border-bottom: 1px solid var(--color-ink); background: var(--color-paper); box-shadow: 0 1px 0 var(--color-rule), 0 12px 24px -18px color-mix(in oklab, var(--color-ink) 35%, transparent); position: relative; container-type: inline-size; }
+.card-head { border-bottom: 1px solid var(--color-rule); padding-block: var(--space-4); background: var(--color-paper-2); }
 .node { display: inline-block; width: 14px; height: 14px; background: var(--color-ink); flex: none; }
 .node--ring { background: var(--color-paper); border: 2px solid var(--color-ink); }
 .who-line { display: flex; align-items: center; gap: var(--space-3); }
