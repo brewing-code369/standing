@@ -230,7 +230,7 @@ function Panel({ plan, onMem }: { plan: Plan; onMem: (m: Membership) => void }) 
           One transaction, three authorizeKey calls. Each key is bound to one recipient and one cap. The runner sponsors the gas of every renewal.
         </p>
         <Btn
-          disabled={!wallet || !funded || holds || cancelled || sub.phase === 'pulling' || sub.phase === 'confirming'}
+          disabled={!wallet || !funded || !mem || holds || cancelled || sub.phase === 'pulling' || sub.phase === 'confirming'}
           busy={sub.phase === 'signing'}
           onClick={doSubscribe}
           arrow

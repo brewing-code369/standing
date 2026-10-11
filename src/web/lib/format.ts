@@ -39,6 +39,7 @@ export const refusalMeaning = (name: string) => REFUSALS[name] ?? 'The chain rej
 export function plainError(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e)
   if (m.includes('KeyAlreadyExists')) return 'This account already holds these keys. Open its membership instead.'
+  if (m.includes('KeyAlreadyRevoked')) return 'This account cancelled these keys and the chain does not reinstate them. Use a fresh key.'
   if (/rate limited|exceeds defined limit/i.test(m)) return 'The network asked for a short pause. Try again in a few seconds.'
   if (/user rejected|NotAllowedError|cancelled|canceled/i.test(m)) return 'The signature was not given.'
   return m.split('\n')[0].slice(0, 240)
