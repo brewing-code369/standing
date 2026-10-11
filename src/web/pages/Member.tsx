@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { getAddress, isAddressEqual, type Address } from 'viem'
 import { cancelCalls } from '../../core/calls'
 import type { Membership } from '../../core/membership'
-import { periodLabel, type Plan } from '../../core/plan'
+import { periodLabel, type Plan, type Role } from '../../core/plan'
 import { api, ApiError, type AttackKind, type AttackResult } from '../lib/api'
 import { loadLedger, loadMembership } from '../lib/chainData'
 import { countdown, dateTime, money, plainError, short } from '../lib/format'
@@ -11,7 +11,7 @@ import { sendCalls } from '../lib/wallet'
 import { Receipts } from '../receipts'
 import { A, Btn, Chip, LinkBtn, Notice, Skeleton, Tx } from '../ui'
 import { useWallet } from '../wallet-context'
-import { MembershipCard } from '../wires'
+import { MembershipCard, type TryLine } from '../wires'
 import { CheatReceipt } from '../refusal'
 
 const ATTACKS: { kind: AttackKind; title: string; sub: string }[] = [
@@ -109,6 +109,28 @@ export function Member({ planId, account }: { planId: string; account: string })
     return () => clearInterval(id)
   }, [plan, ledger.reload])
 
+  const [tryBusy, setTryBusy] = useState<string | null>(null)
+  const [tryRes, setTryRes] = useState<{ role: Role; kind: AttackKind; node: ReactNode } | null>(null)
+  const runTry = async (kind: AttackKind, role: Role, key: string = kind) => {
+    if (!plan) return
+    setTryBusy(key)
+    const at = Date.now()
+    try {
+      const res = await api.attack(plan.id, member, kind)
+      setTryRes({ role, kind, node: <CheatReceipt plan={plan} res={res} at={at} /> })
+    } catch (e) {
+      setTryRes({ role, kind, node: <p className="field__err" role="alert">{e instanceof ApiError && e.offline ? 'The renewal runner is not answering, so no attempt was made.' : e instanceof Error ? e.message : String(e)}</p> })
+    } finally {
+      setTryBusy(null)
+    }
+  }
+  const TRY: Record<string, AttackKind> = { 'platform:SpendingLimitExceeded': 'overcut', 'platform:CallNotAllowed': 'redirect', 'creator:CallNotAllowed': 'creator-redirect' }
+  const tryLine: TryLine = {
+    can: (role, code) => !!TRY[`${role}:${code}`] && mem?.state === 'active',
+    go: (role, code) => void runTry(TRY[`${role}:${code}`], role, `${role}:${code}`),
+    busy: tryBusy,
+    result: tryRes && tryRes.kind !== 'outsider' ? { role: tryRes.role, node: tryRes.node } : null,
+  }
   const [confirming, setConfirming] = useState(false)
   const [cancel, setCancel] = useState<{ phase: 'idle' | 'signing' | 'done' | 'error'; tx?: string; message?: string }>({ phase: 'idle' })
   const mine = !!wallet && isAddressEqual(wallet.address, member)
@@ -195,22 +217,35 @@ export function Member({ planId, account }: { planId: string; account: string })
           </div>
         )}
 
-        <MembershipCard plan={p} now={now} account={member} states={mem && mem.state !== 'none' ? mem.roles : undefined} />
+        <div className="g">
+          <div className="span-all row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            <h2 className="h-sec">Three keys on this account</h2>
+            <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>Press <b>Try it</b> on any refusal: the runner signs that cheat with its real key and the chain answers.</span>
+          </div>
+        </div>
+        <MembershipCard
+          plan={p}
+          now={now}
+          account={member}
+          states={mem && mem.state !== 'none' ? mem.roles : undefined}
+          t={tryLine}
+          foot={
+            <div className="g" style={{ borderTop: '1px solid var(--color-rule)', paddingBlock: 'var(--space-3)' }}>
+              <div className="span-all row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
+                <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>A creator key pulling from an account that never subscribed</span>
+                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>refused</span>
+                <button type="button" className="btn btn--ghost btn--xs" disabled={tryBusy !== null} onClick={() => void runTry('outsider', 'creator')}>{tryBusy === 'outsider' ? 'Asking the chain…' : 'Try it'}</button>
+              </div>
+              {tryRes?.kind === 'outsider' && <div className="span-all" style={{ marginTop: 'var(--space-3)' }}>{tryRes.node}</div>}
+            </div>
+          }
+        />
 
-        <section className="g" aria-labelledby="cheat" style={{ rowGap: 'var(--space-6)' }}>
-          <div className="c-1-5 stack">
-            <h2 className="h3" id="cheat">Try to cheat this member</h2>
-            <p className="muted">The runner holds only these three keys. Ask it to break its own rules; each attempt is signed with the real key and sent to Moderato, and the chain&apos;s answer comes back as a receipt.</p>
-          </div>
-          <div className="c-6-12">
-            <Cheat plan={p} member={member} />
-          </div>
-        </section>
 
         <section className="stack" aria-labelledby="hist">
           <div className="g">
             <div className="c-1-7 stack">
-              <h2 className="h2" id="hist">Renewal history</h2>
+              <h2 className="h-sec" id="hist">Renewal history</h2>
             </div>
           </div>
           {ledger.status === 'loading' && <div className="g"><div className="span-all"><Skeleton label="Reading this member's pulls from the chain logs" /></div></div>}
@@ -235,7 +270,7 @@ export function Member({ planId, account }: { planId: string; account: string })
         <section className="stack" aria-labelledby="cancel">
           <div className="g" style={{ rowGap: 'var(--space-6)' }}>
             <div className="c-1-6 stack">
-              <h2 className="h2" id="cancel">Cancel</h2>
+              <h2 className="h-sec" id="cancel">Cancel</h2>
               <p className="muted body">One signature revokes the creator, platform and STANDING keys in a single transaction. The next pull is refused with KeyAlreadyRevoked.</p>
             </div>
             <div className="c-8-12 stack">

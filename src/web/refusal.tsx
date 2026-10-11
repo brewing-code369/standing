@@ -50,7 +50,7 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         {refused && (
           <>
             <span className="receipt__code">{res.reason}</span>
-            <span className="muted">{refusalMeaning(res.reason)} Nothing moved.</span>
+            <span className="muted">{refusalMeaning(res.reason)} Nothing moved. The node rejected the transaction at submission, so it was never mined and has no hash; the block is when it was checked.</span>
           </>
         )}
         {res.status === 'paid' && <Tx hash={res.tx} />}

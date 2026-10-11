@@ -5,6 +5,9 @@ import { periodLabel, price, ROLES, type Role } from '../core/plan'
 import { countdown, money, short } from './lib/format'
 import { Addr, Chip } from './ui'
 
+export type Refusal = 'CallNotAllowed' | 'SpendingLimitExceeded'
+export type TryLine = { can: (role: Role, code: Refusal) => boolean; go: (role: Role, code: Refusal) => void; busy: string | null; result: { role: Role; node: ReactNode } | null }
+
 export type CardPlan = {
   shares: Record<Role, bigint>
   recipients: Partial<Record<Role, Address>>
@@ -60,7 +63,17 @@ function Readout({ plan, role, s, now }: { plan: CardPlan; role: Role; s: RoleSt
   )
 }
 
-function Wire({ plan, role, state, now }: { plan: CardPlan; role: Role; state?: RoleState; now: number }) {
+function TryBtn({ t, role, code }: { t?: TryLine; role: Role; code: Refusal }) {
+  if (!t || !t.can(role, code)) return null
+  const k = `${role}:${code}`
+  return (
+    <button type="button" className="btn btn--ghost btn--xs" disabled={t.busy !== null} aria-busy={t.busy === k} onClick={() => t.go(role, code)}>
+      {t.busy === k ? 'Asking the chain…' : 'Try it'}
+    </button>
+  )
+}
+
+function Wire({ plan, role, state, now, t }: { plan: CardPlan; role: Role; state?: RoleState; now: number; t?: TryLine }) {
   const line = LINE[role]
   const total = price(plan)
   const share = plan.shares[role]
@@ -98,14 +111,15 @@ function Wire({ plan, role, state, now }: { plan: CardPlan; role: Role; state?: 
             <span className="stub">
               <span className="stub__elbow" aria-hidden="true" />
               <span className="stub__x" aria-hidden="true" />
-              any other address <span className="mono">CallNotAllowed</span>
+              any other address <span className="mono">CallNotAllowed</span> <TryBtn t={t} role={role} code="CallNotAllowed" />
             </span>
             <span className="stub">
               <span className="stub__elbow" aria-hidden="true" />
               <span className="stub__x" aria-hidden="true" />
-              a pull over the cap <span className="mono">SpendingLimitExceeded</span>
+              a pull over the cap <span className="mono">SpendingLimitExceeded</span> <TryBtn t={t} role={role} code="SpendingLimitExceeded" />
             </span>
           </div>
+          {t?.result?.role === role && <div style={{ marginBlock: 'var(--space-3)' }}>{t.result.node}</div>}
           {state && <Readout plan={plan} role={role} s={state} now={now} />}
         </div>
       </div>
@@ -114,30 +128,29 @@ function Wire({ plan, role, state, now }: { plan: CardPlan; role: Role; state?: 
 }
 
 /** The membership card: the fan's account, three sealed capped lines, and what the chain refuses on each. */
-export function MembershipCard({ plan, states, now, account, head }: { plan: CardPlan; states?: Record<Role, RoleState>; now: number; account?: string; head?: ReactNode }) {
+export function MembershipCard({ plan, states, now, account, head, t, foot }: { plan: CardPlan; states?: Record<Role, RoleState>; now: number; account?: string; head?: ReactNode; t?: TryLine; foot?: ReactNode }) {
   return (
     <div className="card">
       <div className="card-head">
         <div className="g">
-          <div className="c-1-6">
+          <div className={head ? 'c-1-6 stack' : 'c-1-6'}>
             <div className="who-line">
               <span className="node" aria-hidden="true" />
               <span className="label">{account ? 'Fan account' : 'One fan signature authorises these three capped keys'}</span>
               {account && <span className="mono">{short(account)}</span>}
             </div>
+            {head}
           </div>
-          {head && <div className="c-7-12">{head}</div>}
-          {states && (
-            <div className="span-all legend" aria-label="bar legend">
-              <span><i style={{ background: 'var(--color-accent)' }} />cap still available this period</span>
-              <span><i style={{ background: 'var(--color-ink)' }} />pulled this period</span>
-            </div>
-          )}
+          <div className="c-7-12 legend" aria-label="bar legend" style={{ alignSelf: 'end', justifyContent: 'flex-end' }}>
+            <span><i style={{ background: 'var(--color-accent)' }} />{states ? 'cap still available this period' : 'cap per period, share of the price'}</span>
+            {states && <span><i style={{ background: 'var(--color-ink)' }} />pulled this period</span>}
+          </div>
         </div>
       </div>
       {ROLES.map((r) => (
-        <Wire key={r} plan={plan} role={r} state={states?.[r]} now={now} />
+        <Wire key={r} plan={plan} role={r} state={states?.[r]} now={now} t={t} />
       ))}
+      {foot}
     </div>
   )
 }

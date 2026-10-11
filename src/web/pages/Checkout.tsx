@@ -339,7 +339,7 @@ export function Checkout({ planId }: { planId: string }) {
           <span className="label">Checkout, plan {plan.id}</span>
           <h1 className="h2">{plan.name}</h1>
           <p className="lede">
-            Splits between {plan.creatorName}, {plan.platformName} and STANDING · <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD per renewal.
+            <span className="big-num" style={{ fontSize: 'inherit' }}>{money(price(plan))}</span> pathUSD per renewal. Three keys, one signature: {money(plan.shares.creator)} to {plan.creatorName}, {money(plan.shares.platform)} to {plan.platformName}, {money(plan.shares.fee)} to STANDING.
           </p>
         </div>
         <div className="c-8-12 co-panel">

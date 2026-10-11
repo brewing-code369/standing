@@ -585,3 +585,7 @@ a:hover {
 @keyframes pulse { from { opacity: 0.5 } to { opacity: 1 } }
 @media (max-width: 640px) { .top-status > .label { display: none; } }
 .proof-num .ph { width: 1.8em; height: 0.6em; }
+
+.btn--xs { min-height: 28px; padding: 2px 10px; font-size: var(--text-xs); border-width: 1px; border-radius: 4px; margin-left: var(--space-2); }
+.label .mono, .label a, .mono.label { text-transform: none; letter-spacing: 0; }
+.h-sec { font-family: var(--font-display); font-weight: 800; font-size: var(--text-xl); letter-spacing: -0.02em; }

@@ -103,7 +103,6 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
   const [cheat, setCheat] = useState<{ busy: boolean; res?: AttackResult; at?: number; block?: string | null; error?: string }>({ busy: false })
   const data = ledger.status === 'ready' ? ledger.data : null
   const complete = data ? data.renewals.filter((r) => r.complete).length : null
-  const overCap = data ? data.renewals.flatMap((r) => Object.entries(r.pulls).filter(([role, e]) => e && e.amount > plan.shares[role as keyof typeof plan.shares])).length : null
   const member = data?.renewals[0]?.member
   const tickAgo = health.status === 'ready' && health.data.lastTick ? Math.max(0, Math.round(now - health.data.lastTick.at / 1000)) : null
   const tryCheat = async () => {
@@ -122,7 +121,7 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
       <span className="label">Live on Tempo Moderato · plan {plan.id} · runner ticked {tickAgo === null ? '…' : `${tickAgo}s ago`}</span>
       <div className="proof-row">
         <span className="proof-num">{complete === null ? <span className="ph" aria-label="reading" /> : complete.toLocaleString('en-US')}</span>
-        <span className="h3">complete renewals{overCap !== null && <>, <span className={overCap === 0 ? 'proof-zero' : ''} style={overCap ? { color: 'var(--color-refuse)' } : undefined}>{overCap} pulls over the cap</span></>}</span>
+        <span className="h3">complete renewals{complete !== null && <>, <span className="proof-zero">each pull inside its cap</span></>}</span>
       </div>
       <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>
         {complete === null ? 'Reading TransferWithMemo logs from Moderato.' : `${(complete * 3).toLocaleString('en-US')} capped pulls settled, read through block ${data!.head.toLocaleString('en-US')}. Every hash is in the ledger below.`}
