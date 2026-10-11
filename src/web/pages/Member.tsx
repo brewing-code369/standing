@@ -5,13 +5,14 @@ import type { Membership } from '../../core/membership'
 import { periodLabel, type Plan } from '../../core/plan'
 import { api, ApiError, type AttackKind, type AttackResult } from '../lib/api'
 import { loadLedger, loadMembership } from '../lib/chainData'
-import { countdown, dateTime, money, plainError, refusalMeaning } from '../lib/format'
+import { countdown, dateTime, money, plainError, short } from '../lib/format'
 import { useNow, useResource } from '../lib/router'
 import { sendCalls } from '../lib/wallet'
 import { Receipts } from '../receipts'
 import { A, Btn, Chip, LinkBtn, Notice, Skeleton, Tx } from '../ui'
 import { useWallet } from '../wallet-context'
 import { MembershipCard } from '../wires'
+import { CheatReceipt } from '../refusal'
 
 const ATTACKS: { kind: AttackKind; title: string; sub: string }[] = [
   { kind: 'overcut', title: 'Take more than the cut', sub: 'Platform key asks for double its cap' },
@@ -24,7 +25,7 @@ const HEAD: Partial<Record<Membership['state'], string>> = { active: 'active.', 
 
 type Attempt = { id: number; kind: AttackKind; at: number; res?: AttackResult; error?: string }
 
-function Verdict({ a }: { a: Attempt }) {
+function Verdict({ a, plan }: { a: Attempt; plan: Plan }) {
   if (a.error) {
     return (
       <div className="verdict">
@@ -33,25 +34,7 @@ function Verdict({ a }: { a: Attempt }) {
       </div>
     )
   }
-  const r = a.res!
-  const refused = r.status === 'refused'
-  return (
-    <div className="verdict" aria-live="polite">
-      <div className="row">
-        <span className="label">{dateTime(a.at / 1000)}</span>
-        <Chip kind={refused ? 'refused' : r.status === 'paid' ? 'paid' : 'wait'}>{r.status}</Chip>
-      </div>
-      <p>{r.attempt.charAt(0).toUpperCase() + r.attempt.slice(1)}</p>
-      {r.status === 'refused' && (
-        <>
-          <span className="verdict__name">{r.reason}</span>
-          <p className="muted">{refusalMeaning(r.reason)}</p>
-        </>
-      )}
-      {r.status === 'paid' && <Tx hash={r.tx} />}
-      {r.status === 'error' && <p className="muted">{r.message}</p>}
-    </div>
-  )
+  return <CheatReceipt plan={plan} res={a.res!} at={a.at} />
 }
 
 export function Cheat({ plan, member }: { plan: Plan; member: Address }) {
@@ -82,9 +65,9 @@ export function Cheat({ plan, member }: { plan: Plan; member: Address }) {
       {log.length === 0 ? (
         <p className="muted body">Press one. The runner signs the attempt with its real key, sends it to Tempo Moderato and reports the revert name the chain returns.</p>
       ) : (
-        <div>
+        <div className="receipts-log">
           {log.map((a) => (
-            <Verdict key={a.id} a={a} />
+            <Verdict key={a.id} a={a} plan={plan} />
           ))}
         </div>
       )}
@@ -177,41 +160,42 @@ export function Member({ planId, account }: { planId: string; account: string })
     <>
       <div className="sheet band" style={{ paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-16)' }}>
       <div className="stack-lg">
-        <div className="g" style={{ rowGap: 'var(--space-6)' }}>
-          <div className="c-1-10 stack">
+        <div className="g" style={{ rowGap: 'var(--space-6)', alignItems: 'end' }}>
+          <div className="c-1-5 stack">
             <span className="label">
-              Membership on plan <A href={`/p/${p.id}`}>{p.id}</A>
+              Membership on plan <A href={`/p/${p.id}`}>{p.id}</A> · <span className="mono">{short(member)}</span>
             </span>
-            {mem ? <h1 className="display" style={{ fontSize: 'clamp(44px, 8vw, 104px)' }}>{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
-            <p className="mono" style={{ overflowWrap: 'anywhere' }}>{member}</p>
-            <p className="lede">
+            {mem ? <h1 className="title">{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
+            <p className="muted">
               {p.name}. {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD every {periodLabel(p.period)}.
             </p>
           </div>
-        </div>
-
-        <div className="g" style={{ rowGap: 'var(--space-6)' }}>
-          <div className="c-1-6 stack">
-            <span className="label">Next renewal</span>
-            <p className="big-num" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }} aria-live="off">
-              {mem?.state === 'active' ? (periodEnd - now > 0 ? `in ${countdown(periodEnd - now)}` : 'due now') : mem ? 'none scheduled' : 'reading'}
-            </p>
-            {mem?.state === 'active' && <p className="muted">The runner pulls when the period resets, at {dateTime(periodEnd)}.</p>}
-            {mem?.state === 'cancelled' && <p className="muted">All three keys are revoked. The chain refuses every further pull.</p>}
-            {mem?.state === 'none' && (
+          <div className="c-6-12 member-stats">
+            <div>
+              <span className="label">Renewals settled</span>
+              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }}>{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length.toLocaleString('en-US') : '…'}</p>
+            </div>
+            <div>
+              <span className="label">Pulled so far</span>
+              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }}>{paid === null ? '…' : money(paid)}</p>
+              <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>pathUSD, within caps</span>
+            </div>
+            <div>
+              <span className="label">Next renewal</span>
+              <p className="big-num" style={{ fontSize: 'var(--text-2xl)' }} aria-live="off">
+                {mem?.state === 'active' ? (periodEnd - now > 0 ? `in ${countdown(periodEnd - now)}` : 'due now') : mem ? 'none' : '…'}
+              </p>
+              {mem?.state === 'active' && <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>at {dateTime(periodEnd)}</span>}
+            </div>
+          </div>
+          {mem?.state === 'cancelled' && <p className="span-all muted">All three keys are revoked. The chain refuses every further pull.</p>}
+          {mem?.state === 'none' && (
+            <div className="span-all">
               <LinkBtn href={`/p/${p.id}`} arrow>
                 Subscribe to this plan
               </LinkBtn>
-            )}
-          </div>
-          <dl className="kv c-8-12" style={{ alignContent: 'start' }}>
-            <dt>Pulled so far</dt>
-            <dd className="mono">{paid === null ? 'reading' : `${money(paid)} pathUSD`}</dd>
-            <dt>Account pathUSD (Moderato faucet)</dt>
-            <dd className="mono">{mem ? money(mem.balance) : 'reading'}</dd>
-            <dt>Renewals settled</dt>
-            <dd className="mono">{ledger.status === 'ready' && ledger.data ? ledger.data.renewals.filter((r) => r.complete).length : 'reading'}</dd>
-          </dl>
+            </div>
+          )}
         </div>
 
         {memError && (
@@ -229,7 +213,7 @@ export function Member({ planId, account }: { planId: string; account: string })
         <section className="stack" aria-labelledby="hist">
           <div className="g">
             <div className="c-1-7 stack">
-              <h2 className="h2" id="hist">renewal history.</h2>
+              <h2 className="h2" id="hist">Renewal history</h2>
             </div>
           </div>
           {ledger.status === 'loading' && <div className="g"><div className="span-all"><Skeleton label="Reading this member's pulls from the chain logs" /></div></div>}
@@ -253,7 +237,7 @@ export function Member({ planId, account }: { planId: string; account: string })
           <div className="sheet band">
             <div className="g" style={{ rowGap: 'var(--space-8)' }}>
               <div className="c-1-6 stack">
-                <h2 className="h2" id="cheat">try to cheat.</h2>
+                <h2 className="h2" id="cheat">Try to cheat this member</h2>
                 <p className="lede">The runner holds only these three keys. Ask it to break its own rules.</p>
               </div>
               <div className="c-7-12" style={{ background: 'var(--color-paper)', border: '1px solid var(--color-ink)', padding: 'var(--space-6)' }}>
@@ -267,7 +251,7 @@ export function Member({ planId, account }: { planId: string; account: string })
         <section className="stack" aria-labelledby="cancel">
           <div className="g" style={{ rowGap: 'var(--space-6)' }}>
             <div className="c-1-6 stack">
-              <h2 className="h2" id="cancel">cancel.</h2>
+              <h2 className="h2" id="cancel">Cancel</h2>
               <p className="muted body">One signature revokes the creator, platform and STANDING keys in a single transaction. The next pull is refused with KeyAlreadyRevoked.</p>
             </div>
             <div className="c-8-12 stack">
@@ -305,7 +289,8 @@ export function Member({ planId, account }: { planId: string; account: string })
                 )
               ) : (
                 <div className="stack">
-                  <p>Only the key that owns this account can sign the cancel.</p>
+                  <Chip kind="wait">Owner only</Chip>
+                  <p>Only this member&apos;s key can cancel: one signature revokes all three keys. You are viewing as a visitor.</p>
                   <Btn variant="ghost" onClick={() => connect('browser')}>
                     Use my browser key
                   </Btn>

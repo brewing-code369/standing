@@ -8,7 +8,8 @@ import { useNow, useResource, type Resource } from '../lib/router'
 import { Receipts } from '../receipts'
 import { A, Btn, LinkBtn, Notice, Skeleton } from '../ui'
 import { MembershipCard } from '../wires'
-import { Cheat } from './Member'
+import { CheatReceipt } from '../refusal'
+import type { AttackResult } from '../lib/api'
 
 function runnerDown(e: Error) {
   return e instanceof ApiError && e.offline
@@ -26,10 +27,10 @@ type LedgerData = Awaited<ReturnType<typeof loadLedger>>
 
 function Ledger({ plan, ledger }: { plan: Plan; ledger: Resource<LedgerData | null> & { reload: () => void } }) {
   return (
-    <section id="ledger" className="sheet band ruled-top">
+    <section id="ledger" className="sheet band--tight">
       <div className="g">
         <div className="c-1-7 stack">
-          <h2 className="h2">latest renewals.</h2>
+          <h2 className="h2">Latest renewals</h2>
           <p className="muted body">Every row is three transfers on pathUSD, matched to plan {plan.id} by their memo and read from the chain logs. Each hash opens in the explorer.</p>
         </div>
       </div>
@@ -43,13 +44,6 @@ function Ledger({ plan, ledger }: { plan: Plan; ledger: Resource<LedgerData | nu
               <p className="span-all label">
                 {ledger.data.renewals.filter((r) => r.complete).length} complete renewals, three pulls each, read through block {ledger.data.head.toLocaleString('en-US')}
               </p>
-            </div>
-            <div className="g" style={{ marginTop: 'var(--space-12)' }}>
-              <div className="span-all stack">
-                <h2 className="h2">try to cheat a live member.</h2>
-                <p className="muted body">The runner holds the real platform and creator keys for this plan. Ask them to take a bigger cut, pay someone else, or pull from a stranger, and read the chain&apos;s answer.</p>
-                <Cheat plan={plan} member={ledger.data.renewals[0].member} />
-              </div>
             </div>
           </>
         )}
@@ -69,7 +63,7 @@ function Ledger({ plan, ledger }: { plan: Plan; ledger: Resource<LedgerData | nu
 
 function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => void }; now: number }) {
   return (
-    <section id="proof" className="sheet" style={{ paddingBottom: 'var(--space-16)' }}>
+    <section id="proof" className="sheet" style={{ paddingBottom: 'var(--space-4)' }}>
       {plan.status === 'loading' && <div className="g"><div className="span-all"><Skeleton label="Reading the demo plan" /></div></div>}
       {plan.status === 'error' && <div className="g"><div className="span-all"><ProofError error={plan.error} retry={plan.reload} what="The demo plan" /></div></div>}
       {plan.status === 'ready' && plan.data === null && (
@@ -106,7 +100,7 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
     const id = setInterval(health.reload, 15000)
     return () => clearInterval(id)
   }, [health.reload])
-  const [cheat, setCheat] = useState<{ busy: boolean; text?: string; refused?: boolean }>({ busy: false })
+  const [cheat, setCheat] = useState<{ busy: boolean; res?: AttackResult; at?: number; block?: string | null; error?: string }>({ busy: false })
   const data = ledger.status === 'ready' ? ledger.data : null
   const complete = data ? data.renewals.filter((r) => r.complete).length : null
   const member = data?.renewals[0]?.member
@@ -115,27 +109,28 @@ function LiveProof({ plan, ledger, now }: { plan: Plan; ledger: Resource<LedgerD
     if (!member) return
     setCheat({ busy: true })
     try {
-      const r = await api.attack(plan.id, member, 'overcut')
-      const block = await pub.getBlockNumber().catch(() => null)
-      const asked = `asked ${money(plan.shares.platform * 2n)} against the ${money(plan.shares.platform)} cap per ${periodLabel(plan.period)}`
-      setCheat({ busy: false, refused: r.status === 'refused', text: r.status === 'refused' ? `${r.reason} · ${asked}${block ? ` · Moderato block ${block.toLocaleString('en-US')}` : ''}` : `${r.status}: ${r.attempt}` })
+      const res = await api.attack(plan.id, member, 'overcut')
+      const block = (res as { block?: string }).block ?? (await pub.getBlockNumber().then(String).catch(() => null))
+      setCheat({ busy: false, res, at: Date.now(), block })
     } catch (e) {
-      setCheat({ busy: false, text: e instanceof Error ? e.message : String(e) })
+      setCheat({ busy: false, error: e instanceof Error ? e.message : String(e) })
     }
   }
   return (
-    <div className="live" aria-live="polite">
-      <span className="label">Live on Tempo Moderato · plan {plan.id}</span>
-      <div className="live__nums">
-        <div><div className="live__n">{complete ?? '…'}</div><span className="label">complete renewals</span></div>
-        <div><div className="live__n">{complete === null ? '…' : (complete * 3).toLocaleString('en-US')}</div><span className="label">pulls settled</span></div>
-        <div><div className="live__n mono" style={{ fontSize: 'var(--text-lg)' }}>{data ? data.head.toLocaleString('en-US') : '…'}</div><span className="label">read through block</span></div>
-        <div><div className="live__n mono" style={{ fontSize: 'var(--text-lg)' }}>{tickAgo === null ? '…' : `${tickAgo}s ago`}</div><span className="label">runner last tick</span></div>
+    <div className="stack">
+      <span className="label">Live on Tempo Moderato · plan {plan.id} · runner ticked {tickAgo === null ? '…' : `${tickAgo}s ago`}</span>
+      <div className="proof-row">
+        <span className="proof-num">{complete === null ? '…' : complete.toLocaleString('en-US')}</span>
+        <span className="h3">complete renewals, <span className="proof-zero">0 over the cap</span></span>
       </div>
-      <div className="live__try">
-        <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Take double the cut</Btn>
-        {cheat.text && <p className="mono" style={{ fontSize: 'var(--text-sm)', color: cheat.refused ? 'var(--color-refuse)' : undefined }}>{cheat.refused ? 'Refused by the chain · ' : ''}{cheat.text}</p>}
+      <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>
+        {complete === null ? 'Reading TransferWithMemo logs from Moderato.' : `${(complete * 3).toLocaleString('en-US')} capped pulls settled, read through block ${data!.head.toLocaleString('en-US')}. Every hash is in the ledger below.`}
+      </p>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+        <Btn variant="ghost" busy={cheat.busy} disabled={!member || cheat.busy} onClick={tryCheat}>Make the platform take double its cut</Btn>
       </div>
+      {cheat.res && <CheatReceipt plan={plan} res={cheat.res} at={cheat.at!} block={cheat.block} />}
+      {cheat.error && <p className="field__err" role="alert">{cheat.error}</p>}
     </div>
   )
 }
@@ -155,13 +150,10 @@ export function Home() {
     <>
       <section className="sheet" style={{ paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-8)' }}>
         <div className="g" style={{ alignItems: 'start', rowGap: 'var(--space-6)' }}>
-          <div className="c-1-7 stack">
-            <h1 className="display" style={{ fontSize: 'clamp(44px, 6vw, 84px)' }}>
-              three lines.
-              <br />
-              one signature<span className="period" />
-            </h1>
-            <p className="lede">A membership checkout where the platform takes its cut without ever holding the creator's money.</p>
+          <div className="c-1-7">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : plan.status === 'error' ? <ProofError error={plan.error} retry={plan.reload} what="The demo plan" /> : <Skeleton label="Reading the demo plan" />}</div>
+          <div className="c-8-12 stack">
+            <h1 className="h2">Three capped keys. One fan signature.</h1>
+            <p className="body">A membership checkout where the platform takes its cut without ever holding the creator&apos;s money. Each key can pay only its own recipient, only up to its cap, once per period.</p>
             <div className="row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
               {target ? (
                 <LinkBtn href={target} arrow>
@@ -172,13 +164,8 @@ export function Home() {
                   Join the demo membership
                 </Btn>
               )}
-              <A href="/new" className="btn btn--ghost">
-                Sell memberships on your platform
-              </A>
             </div>
-            {plan.status === 'error' && <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>The demo opens once the renewal runner answers.</p>}
           </div>
-          <div className="c-8-12">{planData ? <LiveProof plan={planData} ledger={ledger} now={now} /> : <Skeleton label="Reading the demo plan" />}</div>
         </div>
       </section>
 
@@ -187,19 +174,6 @@ export function Home() {
 
       {planData && <Ledger plan={planData} ledger={ledger} />}
 
-      <section className="sheet band ruled-top">
-        <div className="g" style={{ rowGap: 'var(--space-8)' }}>
-          <div className="c-1-7 stack">
-            <h2 className="h2">you run a platform.</h2>
-            <p className="body">Set the price, your cut and the period. STANDING returns a checkout link where your members sign once and every share moves from their account to its owner, never through yours.</p>
-          </div>
-          <div className="c-8-12">
-            <LinkBtn href="/new" arrow>
-              Sell memberships on your platform
-            </LinkBtn>
-          </div>
-        </div>
-      </section>
     </>
   )
 }

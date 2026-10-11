@@ -122,11 +122,17 @@ export function MembershipCard({ plan, states, now, account, head }: { plan: Car
           <div className="c-1-6">
             <div className="who-line">
               <span className="node" aria-hidden="true" />
-              <span className="label">{account ? 'Fan account' : 'Your account, after one signature'}</span>
+              <span className="label">{account ? 'Fan account' : 'One fan signature authorises these three capped keys'}</span>
               {account && <span className="mono">{short(account)}</span>}
             </div>
           </div>
           {head && <div className="c-7-12">{head}</div>}
+          {states && (
+            <div className="span-all legend" aria-label="bar legend">
+              <span><i style={{ background: 'var(--color-accent)' }} />cap still available this period</span>
+              <span><i style={{ background: 'var(--color-ink)' }} />pulled this period</span>
+            </div>
+          )}
         </div>
       </div>
       {ROLES.map((r) => (

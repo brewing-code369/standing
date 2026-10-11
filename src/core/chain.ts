@@ -26,3 +26,4 @@ export const keyRevokedEvent = parseAbiItem('event KeyRevoked(address indexed ac
 
 export const txUrl = (hash: string) => `${EXPLORER}/tx/${hash}`
 export const addressUrl = (a: string) => `${EXPLORER}/address/${a}`
+export const blockUrl = (n: string | number | bigint) => `${EXPLORER}/block/${n}`
