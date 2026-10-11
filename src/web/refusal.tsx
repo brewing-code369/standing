@@ -21,13 +21,7 @@ export function CheatReceipt({ plan, res, at, block }: { plan: Plan; res: Attack
         <Chip kind={refused ? 'refused' : res.status === 'paid' ? 'paid' : 'wait'}>{refused ? 'Refused by chain' : res.status}</Chip>
       </header>
       <p className="receipt__what">{(res.attempt.charAt(0).toUpperCase() + res.attempt.slice(1)).replace(/0x[0-9a-fA-F]{40}/g, (a) => short(a))}</p>
-      {false && over && (
-        <div className="overshoot" role="img" aria-label={`asked ${money(asked)}, cap ${money(cap)}`}>
-          <div className="overshoot__cap" />
-          <div className="overshoot__ask" />
-          <span className="overshoot__mark">cap</span>
-        </div>
-      )}
+      {over && refused && res.reason === 'SpendingLimitExceeded' && <p className="muted" style={{ fontSize: 'var(--text-sm)' }}>The renewal already pulled this period&apos;s {money(cap)}, so the key had 0.00 left; the chain refuses any further pull, and {money(asked)} is twice the whole cap.</p>}
       <dl className="receipt__rows">
         <dt>Signed by</dt>
         <dd>{role} key on member {short(res.member)}</dd>

@@ -14,7 +14,12 @@ function RunnerStatus() {
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
     let live = true
-    const load = () => api.runner().then((r) => live && setInfo(r), () => live && setInfo('down'))
+    let fails = 0
+    const load = () =>
+      api.runner().then(
+        (r) => { fails = 0; if (live) setInfo(r) },
+        () => { fails++; if (live) setInfo((prev) => (fails >= 3 || prev === null || prev === 'down' ? 'down' : prev)) },
+      )
     load()
     const poll = setInterval(load, 15_000)
     const clock = setInterval(() => setNow(Date.now()), 1000)

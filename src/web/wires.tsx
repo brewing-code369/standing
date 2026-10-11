@@ -116,7 +116,7 @@ function Wire({ plan, role, state, now, t }: { plan: CardPlan; role: Role; state
             <span className="stub">
               <span className="stub__elbow" aria-hidden="true" />
               <span className="stub__x" aria-hidden="true" />
-              a pull over the cap <span className="mono">SpendingLimitExceeded</span> <TryBtn t={t} role={role} code="SpendingLimitExceeded" />
+              over the cap <span className="mono">SpendingLimitExceeded</span> <TryBtn t={t} role={role} code="SpendingLimitExceeded" />
             </span>
           </div>
           {t?.result?.role === role && <div style={{ marginBlock: 'var(--space-3)' }}>{t.result.node}</div>}

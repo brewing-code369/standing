@@ -146,7 +146,7 @@ export function Member({ planId, account }: { planId: string; account: string })
             {mem ? <h1 className="title">{headWord}</h1> : memError ? <h1 className="h2">{memError}</h1> : <Skeleton label="Reading the three keys on this account from Moderato" />}
  {memError && mem && <p className="muted" style={{ fontSize: 'var(--text-xs)' }}>Last key read failed, showing the previous read; retrying every 10 s.</p>}
             <p className="muted">
-              {p.name} · {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD per renewal
+              {p.name.split(', renews')[0]} · {money(p.shares.creator + p.shares.platform + p.shares.fee)} pathUSD per renewal
             </p>
           </div>
           <div className="c-6-12 inline-stats" aria-live="off">
@@ -177,7 +177,7 @@ export function Member({ planId, account }: { planId: string; account: string })
         <div className="g">
           <div className="span-all row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             <h2 className="h-sec">Three keys on this account</h2>
-            <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>Three refusals on this card can be tried live. <b>Try it</b> has the runner sign that cheat with its real key; the chain answers.</span>
+            <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>Four refusals on this card can be tried live. <b>Try it</b> has the runner sign that cheat with its real key; the chain answers.</span>
           </div>
         </div>
         <MembershipCard
@@ -190,7 +190,7 @@ export function Member({ planId, account }: { planId: string; account: string })
             <div className="g" style={{ borderTop: '1px solid var(--color-rule)', paddingBlock: 'var(--space-3)' }}>
               <div className="span-all row" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
                 <span className="muted" style={{ fontSize: 'var(--text-sm)' }}>A creator key pulling from an account that never subscribed</span>
-                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>refused</span>
+                <span className="mono" style={{ color: 'var(--color-refuse)', fontSize: 'var(--text-sm)' }}>refused by the chain</span>
                 <button type="button" className="btn btn--ghost btn--xs" disabled={tryBusy !== null} onClick={() => void runTry('outsider', 'creator')}>{tryBusy === 'outsider' ? 'Asking the chain…' : 'Try it'}</button>
               </div>
               {tryRes?.kind === 'outsider' && <div className="span-all" style={{ marginTop: 'var(--space-3)' }}>{tryRes.node}</div>}

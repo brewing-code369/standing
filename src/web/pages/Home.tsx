@@ -30,7 +30,7 @@ function Ledger({ plan, ledger }: { plan: Plan; ledger: Resource<LedgerData | nu
     <section id="ledger" className="sheet band--tight">
       <div className="g">
         <div className="c-1-7 stack">
-          <h2 className="h2">Latest renewals</h2>
+          <h2 className="h-sec">Latest renewals</h2>
           <p className="muted body">Every row is three transfers on pathUSD, matched to plan {plan.id} by their memo and read from the chain logs. Each hash opens in the explorer.</p>
         </div>
       </div>
@@ -81,8 +81,7 @@ function Proof({ plan, now }: { plan: Resource<Plan | null> & { reload: () => vo
           now={now}
           head={
             <div className="stack" style={{ textAlign: 'left' }}>
-              <span className="label">Demo plan · renewals read from the chain</span>
-              <h2 className="h3">{plan.data.name}</h2>
+              <h2 className="h3">{plan.data.name.split(', renews')[0]}</h2>
               <p>
                 <span className="big-num">{money(price(plan.data))}</span> <span className="muted">pathUSD per renewal · plan {plan.data.id}</span>
               </p>
