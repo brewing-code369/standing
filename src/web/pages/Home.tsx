@@ -102,7 +102,8 @@ function LiveProof({ plan, ledger, now, onResult }: { plan: Plan; ledger: Resour
   const [cheat, setCheat] = useState<{ busy: boolean }>({ busy: false })
   const data = ledger.status === 'ready' ? ledger.data : null
   const complete = data ? data.renewals.filter((r) => r.complete).length : null
-  const member = data?.renewals[0]?.member
+  const runner = useResource(() => api.runner(plan.id), [plan.id])
+  const member = data?.renewals[0]?.member ?? (runner.status === 'ready' ? runner.data.recent.find((r) => r.trigger === 'tick')?.member : undefined)
   const tickAgo = health.status === 'ready' && health.data.lastTick ? Math.max(0, Math.round(now - health.data.lastTick.at / 1000)) : null
   const tryCheat = async () => {
     if (!member) return

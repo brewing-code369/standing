@@ -610,3 +610,7 @@ h1 { text-wrap: balance; }
 .rcpt__lbl { display: none; }
 @media (max-width: 880px) { .rcpt__lbl { display: inline; } }
 @media (max-width: 480px) { .receipt__rows { grid-template-columns: minmax(0, 1fr); } .receipt__rows dd { text-align: left; margin-bottom: var(--space-1); } }
+
+.receipt__rows { max-width: 560px; }
+.inline-stats b.countdown { min-width: 6ch; font-variant-numeric: tabular-nums; }
+.rcpt__sub { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }

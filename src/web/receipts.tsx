@@ -28,12 +28,14 @@ export function Receipts({ rows, planId, showMember = true }: { rows: Renewal[];
             <div className="g">
               <div className="c-1-3 rcpt__meta" role="cell">
                 <span className="mono"><span className="label rcpt__lbl">Period ends </span>{dateTime(row.periodEnd)}</span>
-                {showMember && (
-                  <A className="mono" href={`/m/${planId}/${row.member}`}>
-                    {short(row.member)}
-                  </A>
-                )}
-                <span>{row.complete ? <Chip kind="paid">3 of 3 settled</Chip> : <Chip kind="wait">{n} of 3 settled</Chip>}</span>
+                <span className="rcpt__sub">
+                  {row.complete ? <Chip kind="paid">3 of 3 settled</Chip> : <Chip kind="wait">{n} of 3 settled</Chip>}
+                  {showMember && (
+                    <A className="mono" href={`/m/${planId}/${row.member}`}>
+                      {short(row.member)}
+                    </A>
+                  )}
+                </span>
               </div>
               {ROLES.map((r, i) => {
                 const e = row.pulls[r]
