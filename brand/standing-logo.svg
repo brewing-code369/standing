@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#fafcfe"/>
+  <g transform="translate(169.42 -25.65) scale(0.9516)">
+    <!-- three wires from one signature: creator, platform, STANDING fee -->
+    <g fill="none" stroke="#0a0e12" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M90 400 C210 400 190 170 330 170 H590"/>
+      <path d="M90 400 H590"/>
+      <path d="M90 400 C210 400 190 630 330 630 H590"/>
+    </g>
+    <!-- the caps: yellow bars, length is the share -->
+    <g fill="none" stroke="#e7c100" stroke-width="60">
+      <path d="M330 170 H600"/>
+      <path d="M470 400 H600"/>
+      <path d="M545 630 H600"/>
+    </g>
+    <!-- the seals: an ink bar where each wire meets its recipient -->
+    <g fill="none" stroke="#0a0e12" stroke-width="34" stroke-linecap="round">
+      <path d="M632 100 V240"/>
+      <path d="M632 330 V470"/>
+      <path d="M632 560 V700"/>
+    </g>
+    <!-- the one fan signature -->
+    <circle cx="90" cy="400" r="46" fill="#0a0e12" stroke="#0a0e12" stroke-width="2"/>
+  </g>
+  <text x="512" y="880" text-anchor="middle" font-family="'Archivo', sans-serif" font-weight="800" font-size="170" letter-spacing="-6" fill="#0a0e12">STANDING</text>
+</svg>
